@@ -136,9 +136,12 @@ struct LoginView: View {
     // MARK: - Subviews
     
     var residentFields: some View {
-        HStack(spacing: 15) {
-            CustomTextField(placeholder: "Manzana (Mz)", text: $viewModel.manzana)
-            CustomTextField(placeholder: "Villa", text: $viewModel.villa)
+        VStack(spacing: 20) {
+            HStack(spacing: 15) {
+                CustomTextField(placeholder: "Manzana (Mz)", text: $viewModel.manzana)
+                CustomTextField(placeholder: "Villa", text: $viewModel.villa)
+            }
+            CustomSecureField(placeholder: "Contraseña", text: $viewModel.password)
         }
     }
     
