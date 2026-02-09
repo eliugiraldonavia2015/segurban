@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 class LoginViewModel: ObservableObject {
     @Published var selectedRole: UserRole = .resident
