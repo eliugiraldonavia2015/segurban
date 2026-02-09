@@ -11,24 +11,20 @@ struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @Namespace private var animation
     @State private var showSplash = false
+    @State private var isAnimatingLogin = false
     
     var body: some View {
-        if viewModel.isAuthenticated {
-            if showSplash {
-                splashScreen
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation {
-                                showSplash = false
-                            }
-                        }
-                    }
-            } else {
-                DashboardView()
-                    .transition(.opacity)
-            }
+        if viewModel.isAuthenticated && !showSplash && !isAnimatingLogin {
+            DashboardView()
+                .transition(.opacity)
         } else {
-            loginContent
+            ZStack {
+                if showSplash {
+                    splashScreen
+                } else {
+                    loginContent
+                }
+            }
         }
     }
     
@@ -46,11 +42,17 @@ struct LoginView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .scaleEffect(showSplash ? 1.2 : 0.8)
+                    .matchedGeometryEffect(id: "logo", in: animation)
+                    .scaleEffect(1.2)
                     .shadow(color: .cyan.opacity(0.8), radius: 30, x: 0, y: 0)
                     .onAppear {
-                        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                            // This triggers the pulsing effect
+                        // Move to Dashboard after delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation {
+                                showSplash = false
+                                viewModel.isAuthenticated = true // Confirm authentication state visually
+                                isAnimatingLogin = false // Reset animation state
+                            }
                         }
                     }
                 
@@ -59,8 +61,7 @@ struct LoginView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                     .padding(.top, 20)
-                    .opacity(showSplash ? 1 : 0)
-                    .animation(.easeIn(duration: 1).delay(0.5), value: showSplash)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
     }
@@ -74,100 +75,118 @@ struct LoginView: View {
             VStack(spacing: 0) {
                 // Header / Logo
                 VStack(spacing: 20) {
-                    Image(systemName: "shield.checkerboard") // Logo placeholder
-                        .font(.system(size: 60))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.cyan, .blue],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    if !isAnimatingLogin {
+                        Image(systemName: "shield.checkerboard") // Logo placeholder
+                            .font(.system(size: 60))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.cyan, .blue],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .padding()
-                        .background(
-                            Circle()
-                                .fill(Color.white.opacity(0.1))
-                                .frame(width: 120, height: 120)
-                        )
-                        .shadow(color: .cyan.opacity(0.5), radius: 20, x: 0, y: 0)
-                    
-                    Text("SEGURBAN")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .tracking(2)
-                    
-                    Text("Bienvenido. Ingresa tus datos para gestionar tu seguridad.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                            .matchedGeometryEffect(id: "logo", in: animation)
+                            .padding()
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(width: 120, height: 120)
+                            )
+                            .shadow(color: .cyan.opacity(0.5), radius: 20, x: 0, y: 0)
+                            .transition(.scale)
+                        
+                        Text("SEGURBAN")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .tracking(2)
+                            .transition(.opacity)
+                        
+                        Text("Bienvenido. Ingresa tus datos para gestionar tu seguridad.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                            .transition(.opacity)
+                    } else {
+                        Spacer().frame(height: 200) // Keep spacing
+                    }
                 }
                 .padding(.top, 60)
                 .padding(.bottom, 40)
                 
-                // Content
-                ScrollView {
-                    VStack(spacing: 25) {
-                        
-                        // Urbanization Selector
-                        UrbanizationSelector(
-                            selection: $viewModel.selectedUrbanization,
-                            searchText: $viewModel.searchText,
-                            isSearching: $viewModel.isSearchingUrbanization
-                        )
-                        .zIndex(10) // Keep on top of other fields
-                        
-                        if !viewModel.isSearchingUrbanization {
-                            // Dynamic Form Fields
-                            VStack(spacing: 20) {
-                                Group {
-                                    switch viewModel.selectedRole {
-                                    case .resident:
-                                        residentFields
-                                    case .guardRole:
-                                        guardFields
-                                    case .admin:
-                                        adminFields
+                if !isAnimatingLogin {
+                    // Content
+                    ScrollView {
+                        VStack(spacing: 25) {
+                            
+                            // Urbanization Selector
+                            UrbanizationSelector(
+                                selection: $viewModel.selectedUrbanization,
+                                searchText: $viewModel.searchText,
+                                isSearching: $viewModel.isSearchingUrbanization
+                            )
+                            .zIndex(10) // Keep on top of other fields
+                            
+                            if !viewModel.isSearchingUrbanization {
+                                // Dynamic Form Fields
+                                VStack(spacing: 20) {
+                                    Group {
+                                        switch viewModel.selectedRole {
+                                        case .resident:
+                                            residentFields
+                                        case .guardRole:
+                                            guardFields
+                                        case .admin:
+                                            adminFields
+                                        }
                                     }
                                 }
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .move(edge: .leading).combined(with: .opacity)
-                                ))
-                            }
-                            .padding(.top, 10)
-                            
-                            // Action Button
-                            Button(action: {
-                                showSplash = true // Start animation
-                                viewModel.login()
-                            }) {
-                                Text("INICIAR SESIÓN")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(
-                                        LinearGradient(
-                                            colors: [Color.cyan, Color.blue],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
+                                .padding(.top, 10)
+                                
+                                // Action Button
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        isAnimatingLogin = true
+                                    }
+                                    
+                                    // Delay to start splash
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                            showSplash = true
+                                        }
+                                    }
+                                    
+                                    // Trigger ViewModel login logic (mock)
+                                    // viewModel.login() call is deferred until splash ends visually or we can call it here to set state
+                                    // For now we set isAuthenticated = true in splash onAppear logic above to sync with animation
+                                }) {
+                                    Text("INICIAR SESIÓN")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(
+                                            LinearGradient(
+                                                colors: [Color.cyan, Color.blue],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
                                         )
-                                    )
-                                    .cornerRadius(15)
-                                    .shadow(color: .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
+                                        .cornerRadius(15)
+                                        .shadow(color: .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
+                                }
+                                .padding(.top, 20)
                             }
-                            .padding(.top, 20)
                         }
+                        .padding(.horizontal, 30)
                     }
-                    .padding(.horizontal, 30)
                 }
                 
                 Spacer()
                 
                 // Role Switcher
-                if !viewModel.isSearchingUrbanization {
+                if !viewModel.isSearchingUrbanization && !isAnimatingLogin {
                     HStack(spacing: 0) {
                         roleButton(role: .resident)
                         roleButton(role: .guardRole)
@@ -178,13 +197,12 @@ struct LoginView: View {
                     .cornerRadius(20)
                     .padding(.horizontal)
                     .padding(.bottom, 20)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
         .preferredColorScheme(.dark)
         .onTapGesture {
-            // hideKeyboard implementation is now global or can be handled differently
-            // but for this view specifically we can use:
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             viewModel.isSearchingUrbanization = false
         }

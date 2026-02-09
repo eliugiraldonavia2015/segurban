@@ -9,14 +9,17 @@ import SwiftUI
 
 struct ReservationsView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var selectedCategory: String = "Canchas"
+    @State private var selectedFacility: String = "Cancha de Tenis"
     @State private var selectedDate: Int = 5
-    @State private var selectedTime: String = "11:00"
+    @State private var selectedStartSlot: Int? = nil
+    @State private var selectedEndSlot: Int? = nil
     
-    let categories = ["Canchas", "Salón", "Piscina"]
+    let facilities = ["Piscina", "Cancha de Tenis", "Cancha de Fútbol", "Salón de Eventos", "BBQ"]
     let days = Array(1...31)
     let weekDays = ["D", "L", "M", "M", "J", "V", "S"]
     let timeSlots = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
+    // Mock unavailable slots indices
+    let unavailableSlots = [1, 5] // 10:00, 14:00 unavailable
     
     var body: some View {
         ZStack {
@@ -46,35 +49,33 @@ struct ReservationsView: View {
                 ScrollView {
                     VStack(spacing: 25) {
                         
-                        // Category Segmented Control
-                        HStack(spacing: 0) {
-                            ForEach(categories, id: \.self) { category in
-                                Button(action: {
-                                    withAnimation { selectedCategory = category }
-                                }) {
-                                    HStack {
-                                        Image(systemName: iconForCategory(category))
-                                        Text(category)
+                        // Facility Selector (Dropdown)
+                        Menu {
+                            ForEach(facilities, id: \.self) { facility in
+                                Button(action: { selectedFacility = facility }) {
+                                    Text(facility)
+                                    if selectedFacility == facility {
+                                        Image(systemName: "checkmark")
                                     }
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .padding(.vertical, 12)
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        selectedCategory == category ? Color(hex: "152636") : Color.clear
-                                    )
-                                    .foregroundColor(
-                                        selectedCategory == category ? .cyan : .gray
-                                    )
                                 }
                             }
+                        } label: {
+                            HStack {
+                                Text(selectedFacility)
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                            .background(Color(hex: "152636"))
+                            .cornerRadius(15)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
                         }
-                        .background(Color(hex: "0D1B2A").opacity(0.5)) // Darker background for the bar
-                        .cornerRadius(15)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
                         
                         // Calendar Card
                         VStack(spacing: 20) {
@@ -149,27 +150,32 @@ struct ReservationsView: View {
                             }
                             
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
-                                ForEach(timeSlots, id: \.self) { time in
+                                ForEach(Array(timeSlots.enumerated()), id: \.offset) { index, time in
+                                    let isUnavailable = unavailableSlots.contains(index)
+                                    let isSelected = isSlotSelected(index)
+                                    let isStart = selectedStartSlot == index
+                                    let isEnd = selectedEndSlot == index
+                                    
                                     Button(action: {
-                                        withAnimation { selectedTime = time }
+                                        handleSlotSelection(index)
                                     }) {
                                         ZStack(alignment: .topTrailing) {
                                             Text(time)
                                                 .font(.subheadline)
                                                 .fontWeight(.medium)
-                                                .foregroundColor(selectedTime == time ? .black : .gray)
+                                                .foregroundColor(isUnavailable ? .gray : (isSelected ? .black : .white))
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 12)
                                                 .background(
                                                     RoundedRectangle(cornerRadius: 12)
-                                                        .fill(selectedTime == time ? Color.cyan : Color(hex: "152636"))
+                                                        .fill(backgroundForSlot(index, isUnavailable: isUnavailable))
                                                         .overlay(
                                                             RoundedRectangle(cornerRadius: 12)
-                                                                .stroke(selectedTime == time ? Color.cyan : Color.white.opacity(0.1), lineWidth: 1)
+                                                                .stroke(isSelected ? Color.cyan : (isUnavailable ? Color.white.opacity(0.05) : Color.white.opacity(0.1)), lineWidth: 1)
                                                         )
                                                 )
                                             
-                                            if selectedTime == time {
+                                            if isStart || isEnd {
                                                 Image(systemName: "checkmark.circle.fill")
                                                     .font(.system(size: 14))
                                                     .foregroundColor(.white)
@@ -178,6 +184,7 @@ struct ReservationsView: View {
                                             }
                                         }
                                     }
+                                    .disabled(isUnavailable)
                                 }
                             }
                         }
@@ -271,7 +278,7 @@ struct ReservationsView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.gray)
                                 .tracking(1)
-                            Text("\(selectedDate) Oct, \(selectedTime)")
+                            Text(formatSelectedTime())
                                 .font(.headline)
                                 .foregroundColor(.cyan)
                         }
@@ -309,20 +316,101 @@ struct ReservationsView: View {
     }
     
     var categoryTitle: String {
-        switch selectedCategory {
-        case "Canchas": return "Cancha de Tenis"
-        case "Salón": return "Salón de Eventos"
-        case "Piscina": return "Piscina Principal"
-        default: return "Área Común"
-        }
+        return selectedFacility
     }
     
     func iconForCategory(_ category: String) -> String {
-        switch category {
-        case "Canchas": return "sportscourt"
-        case "Salón": return "party.popper"
-        case "Piscina": return "water.waves"
-        default: return "square"
+        // Not used anymore but kept for reference or safe removal
+        return "square"
+    }
+    
+    // MARK: - Logic
+    
+    func handleSlotSelection(_ index: Int) {
+        withAnimation {
+            // Case 1: Start selection
+            if selectedStartSlot == nil {
+                selectedStartSlot = index
+                selectedEndSlot = nil
+            }
+            // Case 2: Deselect if clicking start again
+            else if selectedStartSlot == index && selectedEndSlot == nil {
+                selectedStartSlot = nil
+            }
+            // Case 3: Selecting end slot
+            else if let start = selectedStartSlot, selectedEndSlot == nil {
+                if index == start {
+                    // Clicking start again when end is nil -> deselect
+                    selectedStartSlot = nil
+                } else if index == start + 1 {
+                    // Valid next slot (2 hours max)
+                    selectedEndSlot = index
+                } else if index == start - 1 {
+                    // Clicked previous slot, swap
+                    selectedEndSlot = start
+                    selectedStartSlot = index
+                } else {
+                    // Clicked far away, reset to new start
+                    selectedStartSlot = index
+                    selectedEndSlot = nil
+                }
+            }
+            // Case 4: Range already selected, reset to new start
+            else {
+                selectedStartSlot = index
+                selectedEndSlot = nil
+            }
+        }
+    }
+    
+    func isSlotSelected(_ index: Int) -> Bool {
+        if let start = selectedStartSlot {
+            if let end = selectedEndSlot {
+                return index >= start && index <= end
+            }
+            return index == start
+        }
+        return false
+    }
+    
+    func backgroundForSlot(_ index: Int, isUnavailable: Bool) -> Color {
+        if isUnavailable {
+            return Color(hex: "0D1B2A").opacity(0.5)
+        }
+        if isSlotSelected(index) {
+            if let start = selectedStartSlot, let end = selectedEndSlot {
+                if index > start && index < end {
+                    return Color.cyan.opacity(0.3) // Middle of range (if range > 2, but max is 2 so irrelevant here but good practice)
+                }
+            }
+            return Color.cyan
+        }
+        return Color(hex: "152636")
+    }
+    
+    func formatSelectedTime() -> String {
+        guard let start = selectedStartSlot else { return "Seleccionar hora" }
+        let startTime = timeSlots[start]
+        
+        if let end = selectedEndSlot {
+            // End time is the slot time + 1 hour usually, or just the slot label
+            // Let's assume the slot label is the start of that hour.
+            // So if range is 11:00 (start) - 12:00 (end selected), booking is 11:00 - 13:00?
+            // User said "choose max 2 hours", logic: selecting 2 consecutive slots = 2 hours.
+            // e.g. Select 11:00 and 12:00 -> 11:00 to 13:00.
+            
+            // Logic to get end time string (end slot + 1 hour)
+            // Simple approach: show range "11:00 - 13:00"
+            
+            let endHour = Int(timeSlots[end].prefix(2))! + 1
+            let endTimeString = String(format: "%02d:00", endHour)
+            
+            return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
+        } else {
+            // Single slot (1 hour)
+            let startHour = Int(startTime.prefix(2))!
+            let endTimeString = String(format: "%02d:00", startHour + 1)
+            return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
         }
     }
 }
