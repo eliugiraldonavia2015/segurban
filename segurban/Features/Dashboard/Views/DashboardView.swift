@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var showPanicAlert = false
+    @State private var showGenerateAccess = false
     
     var body: some View {
         ZStack {
@@ -97,6 +98,9 @@ struct DashboardView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .fullScreenCover(isPresented: $showGenerateAccess) {
+            GenerateAccessView()
+        }
     }
     
     // MARK: - Subviews
@@ -104,11 +108,18 @@ struct DashboardView: View {
     var headerView: some View {
         HStack {
             HStack(spacing: 12) {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 45, height: 45)
-                    .foregroundColor(.gray)
-                    .background(Circle().fill(Color.white.opacity(0.1)))
+                AsyncImage(url: URL(string: "https://i.pravatar.cc/150?img=11")) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .foregroundColor(.gray)
+                }
+                .frame(width: 45, height: 45)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.white.opacity(0.1), lineWidth: 1))
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bienvenido a casa")
@@ -151,7 +162,7 @@ struct DashboardView: View {
             }
             
             HStack(spacing: 10) {
-                Button(action: {}) {
+                Button(action: { showGenerateAccess = true }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
                         Text("Generar Código")
@@ -234,14 +245,21 @@ struct DashboardView: View {
     func announcementCard(image: String, tag: String, title: String, desc: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // Placeholder Image
-            Rectangle()
-                .fill(Color.blue.opacity(0.3))
-                .frame(height: 120)
-                .overlay(
-                    Image(systemName: "photo")
-                        .font(.largeTitle)
-                        .foregroundColor(.white.opacity(0.5))
-                )
+            AsyncImage(url: URL(string: "https://picsum.photos/400/200")) { img in
+                img
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .fill(Color.blue.opacity(0.3))
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundColor(.white.opacity(0.5))
+                    )
+            }
+            .frame(height: 120)
+            .clipped()
             
             VStack(alignment: .leading, spacing: 8) {
                 Text(tag)
