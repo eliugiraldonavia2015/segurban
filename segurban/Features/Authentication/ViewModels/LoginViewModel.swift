@@ -21,8 +21,12 @@ class LoginViewModel: ObservableObject {
     @Published var username: String = "" // For Guard/Admin
     @Published var email: String = "" // For Admin
     
+    @Published var isAuthenticated: Bool = false
+    
     func login() {
-        // Implement login logic here
+        // Mock Login Logic
+        // In a real app, this would validate credentials with a backend
+        isAuthenticated = true
         print("Login with role: \(selectedRole)")
     }
 }

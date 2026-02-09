@@ -12,6 +12,15 @@ struct LoginView: View {
     @Namespace private var animation
     
     var body: some View {
+        if viewModel.isAuthenticated {
+            DashboardView()
+                .transition(.opacity)
+        } else {
+            loginContent
+        }
+    }
+    
+    var loginContent: some View {
         ZStack {
             // Background
             Color(hex: "0D1B2A") // Dark Navy
@@ -128,9 +137,15 @@ struct LoginView: View {
         }
         .preferredColorScheme(.dark)
         .onTapGesture {
-            hideKeyboard()
+            // hideKeyboard implementation is now global or can be handled differently
+            // but for this view specifically we can use:
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             viewModel.isSearchingUrbanization = false
         }
+    }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
     // MARK: - Subviews
