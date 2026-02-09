@@ -10,6 +10,7 @@ import SwiftUI
 struct DashboardView: View {
     @State private var showPanicAlert = false
     @State private var showGenerateAccess = false
+    @State private var showReservations = false
     
     var body: some View {
         ZStack {
@@ -49,7 +50,9 @@ struct DashboardView: View {
                             .foregroundColor(.white)
                         
                         HStack(spacing: 20) {
-                            serviceButton(icon: "calendar", title: "Reservas")
+                            Button(action: { showReservations = true }) {
+                                serviceButton(icon: "calendar", title: "Reservas")
+                            }
                             serviceButton(icon: "person.2.fill", title: "Visitas")
                             serviceButton(icon: "shippingbox.fill", title: "Paquetes")
                             serviceButton(icon: "doc.text.fill", title: "Pagos")
@@ -100,6 +103,9 @@ struct DashboardView: View {
         .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $showGenerateAccess) {
             GenerateAccessView()
+        }
+        .fullScreenCover(isPresented: $showReservations) {
+            ReservationsView()
         }
     }
     

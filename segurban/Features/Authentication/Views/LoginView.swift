@@ -10,13 +10,58 @@ import SwiftUI
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @Namespace private var animation
+    @State private var showSplash = false
     
     var body: some View {
         if viewModel.isAuthenticated {
-            DashboardView()
-                .transition(.opacity)
+            if showSplash {
+                splashScreen
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation {
+                                showSplash = false
+                            }
+                        }
+                    }
+            } else {
+                DashboardView()
+                    .transition(.opacity)
+            }
         } else {
             loginContent
+        }
+    }
+    
+    var splashScreen: some View {
+        ZStack {
+            Color(hex: "0D1B2A").ignoresSafeArea()
+            
+            VStack {
+                Image(systemName: "shield.checkerboard")
+                    .font(.system(size: 100))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.cyan, .blue],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .scaleEffect(showSplash ? 1.2 : 0.8)
+                    .shadow(color: .cyan.opacity(0.8), radius: 30, x: 0, y: 0)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                            // This triggers the pulsing effect
+                        }
+                    }
+                
+                Text("Bienvenido")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.top, 20)
+                    .opacity(showSplash ? 1 : 0)
+                    .animation(.easeIn(duration: 1).delay(0.5), value: showSplash)
+            }
         }
     }
     
@@ -94,6 +139,7 @@ struct LoginView: View {
                             
                             // Action Button
                             Button(action: {
+                                showSplash = true // Start animation
                                 viewModel.login()
                             }) {
                                 Text("INICIAR SESIÓN")
