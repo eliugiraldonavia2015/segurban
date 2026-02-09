@@ -33,8 +33,8 @@ struct RangeSlider: View {
                     .offset(x: x(for: range.lowerBound, in: geometry) - 10)
                     .gesture(
                         DragGesture()
-                            .onChanged { value in
-                                let newValue = value(for: value.location.x, in: geometry)
+                            .onChanged { dragValue in
+                                let newValue = value(for: dragValue.location.x, in: geometry)
                                 if newValue < range.upperBound - 1 {
                                     range = newValue...range.upperBound
                                 }
@@ -49,8 +49,8 @@ struct RangeSlider: View {
                     .offset(x: x(for: range.upperBound, in: geometry) - 10)
                     .gesture(
                         DragGesture()
-                            .onChanged { value in
-                                let newValue = value(for: value.location.x, in: geometry)
+                            .onChanged { dragValue in
+                                let newValue = value(for: dragValue.location.x, in: geometry)
                                 if newValue > range.lowerBound + 1 {
                                     range = range.lowerBound...newValue
                                 }
