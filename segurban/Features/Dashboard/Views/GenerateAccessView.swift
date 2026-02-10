@@ -73,20 +73,21 @@ struct GenerateAccessView: View {
                         
                         // Date and Duration
                         HStack(spacing: 15) {
-                            // Date
+                            // Date Picker
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Fecha")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                                 
                                 HStack {
-                                    Text("Hoy, 15 Oct") // Mock date for now
-                                        .foregroundColor(.white)
+                                    DatePicker("", selection: $visitDate, displayedComponents: .date)
+                                        .labelsHidden()
+                                        .colorScheme(.dark)
+                                        .id(visitDate) // Fix for some SwiftUI DatePicker glitches
                                     Spacer()
-                                    Image(systemName: "calendar")
-                                        .foregroundColor(.gray)
                                 }
-                                .padding()
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
                                 .background(Color(hex: "152636"))
                                 .cornerRadius(12)
                                 .overlay(
@@ -95,8 +96,8 @@ struct GenerateAccessView: View {
                                 )
                             }
                             
-                        // Duration
-                        VStack(alignment: .leading, spacing: 10) {
+                            // Duration
+                            VStack(alignment: .leading, spacing: 10) {
                             Text("Duración")
                                 .font(.caption)
                                 .foregroundColor(.gray)
