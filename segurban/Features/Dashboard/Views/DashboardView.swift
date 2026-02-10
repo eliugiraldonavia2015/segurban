@@ -15,6 +15,7 @@ struct DashboardView: View {
     @State private var showNotices = false
     @State private var showPayments = false
     @State private var showVisits = false
+    @State private var showPackages = false
     
     var body: some View {
         ZStack {
@@ -62,7 +63,9 @@ struct DashboardView: View {
                             Button(action: { showVisits = true }) {
                                 serviceButton(icon: "person.2.fill", title: "Visitas")
                             }
-                            serviceButton(icon: "shippingbox.fill", title: "Paquetes")
+                            Button(action: { showPackages = true }) {
+                                serviceButton(icon: "shippingbox.fill", title: "Paquetes")
+                            }
                             serviceButton(icon: "doc.text.fill", title: "Pagos")
                         }
                     }
@@ -144,6 +147,9 @@ struct DashboardView: View {
         }
         .fullScreenCover(isPresented: $showVisits) {
             VisitsView()
+        }
+        .fullScreenCover(isPresented: $showPackages) {
+            PackageRegistrationView()
         }
     }
     
