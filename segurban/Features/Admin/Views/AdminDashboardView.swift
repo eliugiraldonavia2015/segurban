@@ -24,6 +24,7 @@ struct AdminDashboardView: View {
     @State private var showDisabledAlert = false
     @State private var showCommunity = false
     @State private var showMetrics = false
+    @State private var showLogbook = false
     
     var body: some View {
         ZStack {
@@ -145,7 +146,8 @@ struct AdminDashboardView: View {
                     }
                     
                     fabOption(title: "Verificar Bitácora", icon: "book.fill", color: .orange) {
-                        // Action
+                        showLogbook = true
+                        viewModel.showFabMenu = false
                     }
                     
                     fabOption(title: "Verificar Cámaras", icon: "video.fill", color: .red) {
@@ -223,6 +225,9 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showMetrics) {
             AdminMetricsView()
+        }
+        .fullScreenCover(isPresented: $showLogbook) {
+            AdminLogbookView()
         }
     }
     
