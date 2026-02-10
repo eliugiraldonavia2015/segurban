@@ -11,7 +11,12 @@ struct ReservationItem: Identifiable {
     let id = UUID()
     let facility: String
     let time: String
+    let date: String
     let status: String
+    let paymentMethod: String?
+    let amount: Double?
+    let manzana: String
+    let villa: String
 }
 
 struct ReservationsView: View {
@@ -20,6 +25,7 @@ struct ReservationsView: View {
     @State private var selectedDate: Int = 5
     @State private var selectedStartSlot: Int? = nil
     @State private var selectedEndSlot: Int? = nil
+    @State private var selectedReservation: ReservationItem? = nil
     
     // Payment & Confirmation
     @State private var showPaymentOptions = false
@@ -29,7 +35,16 @@ struct ReservationsView: View {
     @State private var errorMessage = ""
     
     @State private var myReservations: [ReservationItem] = [
-        ReservationItem(facility: "Cancha de Tenis A", time: "Hoy, 18:00 - 19:00", status: "ACTIVA")
+        ReservationItem(
+            facility: "Cancha de Tenis A",
+            time: "18:00 - 19:00",
+            date: "Hoy, 5 Oct",
+            status: "ACTIVA",
+            paymentMethod: "Tarjeta",
+            amount: 20.00,
+            manzana: "12",
+            villa: "4"
+        )
     ]
     
     let facilities = ["Piscina", "Cancha de Tenis", "Cancha de Fútbol", "Salón de Eventos", "BBQ"]
@@ -232,52 +247,56 @@ struct ReservationsView: View {
                                     .padding(.vertical, 10)
                             } else {
                                 ForEach(myReservations) { reservation in
-                                    HStack(spacing: 15) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.green.opacity(0.2))
-                                                .frame(width: 50, height: 50)
-                                            Image(systemName: "tennis.racket")
-                                                .foregroundColor(.green)
-                                                .font(.system(size: 20))
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(reservation.facility)
-                                                .font(.subheadline)
+                                    Button(action: {
+                                        selectedReservation = reservation
+                                    }) {
+                                        HStack(spacing: 15) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color.green.opacity(0.2))
+                                                    .frame(width: 50, height: 50)
+                                                Image(systemName: "tennis.racket")
+                                                    .foregroundColor(.green)
+                                                    .font(.system(size: 20))
+                                            }
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(reservation.facility)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(.white)
+                                                Text("\(reservation.date) • \(reservation.time)")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            Text(reservation.status)
+                                                .font(.caption2)
                                                 .fontWeight(.bold)
-                                                .foregroundColor(.white)
-                                            Text(reservation.time)
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
+                                                .foregroundColor(.green)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.green.opacity(0.2))
+                                                .cornerRadius(6)
                                         }
-                                        
-                                        Spacer()
-                                        
-                                        Text(reservation.status)
-                                            .font(.caption2)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.green)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(Color.green.opacity(0.2))
-                                            .cornerRadius(6)
+                                        .padding()
+                                        .background(Color(hex: "152636"))
+                                        .cornerRadius(16)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                        )
+                                        // Green indicator bar on left
+                                        .overlay(
+                                            Rectangle()
+                                                .fill(Color.green)
+                                                .frame(width: 4)
+                                                .cornerRadius(2, corners: [.topLeft, .bottomLeft]),
+                                            alignment: .leading
+                                        )
                                     }
-                                    .padding()
-                                    .background(Color(hex: "152636"))
-                                    .cornerRadius(16)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
-                                    )
-                                    // Green indicator bar on left
-                                    .overlay(
-                                        Rectangle()
-                                            .fill(Color.green)
-                                            .frame(width: 4)
-                                            .cornerRadius(2, corners: [.topLeft, .bottomLeft]),
-                                        alignment: .leading
-                                    )
                                 }
                             }
                         }
@@ -437,6 +456,9 @@ struct ReservationsView: View {
                 message: Text(errorMessage),
                 dismissButton: .default(Text("Entendido"))
             )
+        }
+        .sheet(item: $selectedReservation) { reservation in
+            ReservationDetailView(reservation: reservation)
         }
     }
     
@@ -612,8 +634,13 @@ struct ReservationsView: View {
         
         let newReservation = ReservationItem(
             facility: selectedFacility,
-            time: "Hoy, \(timeOnly)",
-            status: "ACTIVA"
+            time: timeOnly,
+            date: "Hoy, \(selectedDate) Oct",
+            status: "ACTIVA",
+            paymentMethod: showPaymentOptions ? selectedPaymentMethod : "N/A",
+            amount: showPaymentOptions ? 20.00 : 0.00,
+            manzana: "12", // Mock data
+            villa: "4"    // Mock data
         )
         
         myReservations.append(newReservation)
@@ -628,6 +655,101 @@ struct ReservationsView: View {
                 showSuccess = false
                 dismiss()
             }
+        }
+    }
+}
+
+struct ReservationDetailView: View {
+    let reservation: ReservationItem
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color(hex: "0D1B2A").ignoresSafeArea()
+            
+            VStack(spacing: 30) {
+                // Handle
+                Capsule()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 4)
+                    .padding(.top, 10)
+                
+                // Status Icon
+                ZStack {
+                    Circle()
+                        .fill(Color.green.opacity(0.15))
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.green)
+                }
+                .shadow(color: .green.opacity(0.3), radius: 10)
+                
+                VStack(spacing: 5) {
+                    Text("Detalle de Reserva")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("Código: #\(reservation.id.uuidString.prefix(8).uppercased())")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                // Info Card
+                VStack(spacing: 20) {
+                    detailRow(icon: "house.fill", title: "Ubicación", value: "Mz \(reservation.manzana) - Villa \(reservation.villa)")
+                    Divider().background(Color.white.opacity(0.1))
+                    detailRow(icon: "calendar", title: "Fecha", value: reservation.date)
+                    Divider().background(Color.white.opacity(0.1))
+                    detailRow(icon: "clock.fill", title: "Horario", value: reservation.time)
+                    Divider().background(Color.white.opacity(0.1))
+                    detailRow(icon: "dollarsign.circle.fill", title: "Costo", value: reservation.amount == 0 ? "Gratis" : String(format: "$%.2f", reservation.amount!))
+                    
+                    if let method = reservation.paymentMethod, method != "N/A" {
+                         Divider().background(Color.white.opacity(0.1))
+                         detailRow(icon: "creditcard.fill", title: "Método de Pago", value: method)
+                    }
+                }
+                .padding()
+                .background(Color(hex: "152636"))
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                )
+                .padding(.horizontal)
+                
+                Spacer()
+                
+                Button(action: { dismiss() }) {
+                    Text("Cerrar")
+                        .font(.headline)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(15)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationCornerRadius(25)
+    }
+    
+    func detailRow(icon: String, title: String, value: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.cyan)
+                .frame(width: 24)
+            Text(title)
+                .foregroundColor(.gray)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
         }
     }
 }
