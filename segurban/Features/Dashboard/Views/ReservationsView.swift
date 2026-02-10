@@ -384,37 +384,61 @@ struct ReservationsView: View {
             // Success Overlay
             if showSuccess {
                 ZStack {
-                    Color.black.opacity(0.7).ignoresSafeArea()
+                    Color.black.opacity(0.4).ignoresSafeArea()
+                        .transition(.opacity)
                     
-                    VStack(spacing: 20) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.green)
-                            .scaleEffect(showSuccess ? 1.0 : 0.5)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showSuccess)
+                    VStack(spacing: 25) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(0.2))
+                                .frame(width: 100, height: 100)
+                            
+                            Circle()
+                                .stroke(Color.green, lineWidth: 3)
+                                .frame(width: 100, height: 100)
+                                .scaleEffect(showSuccess ? 1.0 : 0.8)
+                                .opacity(showSuccess ? 1 : 0)
+                                .animation(.easeOut(duration: 0.8).repeatForever(autoreverses: false), value: showSuccess)
+
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 50, weight: .bold))
+                                .foregroundColor(.green)
+                                .scaleEffect(showSuccess ? 1.0 : 0.01)
+                                .animation(.spring(response: 0.6, dampingFraction: 0.5), value: showSuccess)
+                        }
                         
-                        Text("¡Reserva Confirmada!")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        
-                        Text("Tu reserva ha sido añadida exitosamente.")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
+                        VStack(spacing: 10) {
+                            Text("¡Reserva Confirmada!")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            
+                            Text("Tu espacio ha sido reservado correctamente.\nPuedes verlo en 'Mis Reservas'.")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                        }
                     }
                     .padding(40)
-                    .background(Color(hex: "152636"))
-                    .cornerRadius(20)
-                    .shadow(radius: 20)
-                    .padding(40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color(hex: "152636"))
+                            .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 10)
+                    )
+                    .padding(30)
+                    .scaleEffect(showSuccess ? 1.0 : 0.8)
+                    .opacity(showSuccess ? 1 : 0)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showSuccess)
                 }
-                .transition(.opacity)
                 .zIndex(100)
             }
         }
         .alert(isPresented: $showError) {
-            Alert(title: Text("Aviso"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text("Límite Excedido"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text("Entendido"))
+            )
         }
     }
     
@@ -467,6 +491,9 @@ struct ReservationsView: View {
                     if count > 4 {
                         errorMessage = "Solo se pueden seleccionar máximo 2 horas por villa"
                         showError = true
+                        // Reset selection on error
+                        selectedStartSlot = nil
+                        selectedEndSlot = nil
                     } else {
                         // Check availability in between
                         var blocked = false
