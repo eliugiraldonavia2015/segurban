@@ -45,8 +45,7 @@ struct VisitsView: View {
                     LazyVStack(spacing: 25, pinnedViews: [.sectionHeaders]) {
                         ForEach(viewModel.sortedSections, id: \.self) { section in
                             Section(header: sectionHeader(title: section)) {
-                                ForEach(viewModel.filteredTransactions[section] ?? []) { visit in // Using same logic as viewmodel
-                                    // Typo fix: viewModel.filteredVisits
+                                ForEach(viewModel.filteredVisits[section] ?? []) { visit in
                                     VisitRow(visit: visit)
                                         .onTapGesture {
                                             selectedVisit = visit

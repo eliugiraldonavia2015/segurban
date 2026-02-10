@@ -290,7 +290,7 @@ struct TransactionRow: View {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                if let due = transaction.dueDate {
+                if transaction.dueDate != nil {
                     Text(transaction.formattedDueDate)
                         .font(.caption)
                         .foregroundColor(.gray)
