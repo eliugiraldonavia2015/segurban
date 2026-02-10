@@ -15,6 +15,8 @@ struct AccountStatusView: View {
     // Animation States
     @State private var showContent = false
     
+    @State private var showPaymentMethods = false
+    
     var body: some View {
         ZStack {
             Color(hex: "0D1B2A").ignoresSafeArea()
@@ -58,7 +60,14 @@ struct AccountStatusView: View {
                                     .padding(.horizontal, 5)
                                     
                                     ForEach(viewModel.filteredTransactions[month] ?? []) { transaction in
-                                        TransactionRow(transaction: transaction)
+                                        TransactionRow(transaction: transaction, isSelected: viewModel.selectedTransactionIDs.contains(transaction.id))
+                                            .onTapGesture {
+                                                if viewModel.selectedTab == 0 && transaction.status != .paid {
+                                                    withAnimation {
+                                                        viewModel.toggleSelection(for: transaction)
+                                                    }
+                                                }
+                                            }
                                     }
                                 }
                             }
@@ -76,21 +85,28 @@ struct AccountStatusView: View {
             VStack {
                 Spacer()
                 Button(action: {
-                    // Report Payment Action
+                    if !viewModel.selectedTransactionIDs.isEmpty {
+                        showPaymentMethods = true
+                    }
                 }) {
                     HStack {
-                        Image(systemName: "camera.fill")
-                        Text("Reportar Pago")
+                        Image(systemName: "creditcard.fill")
+                        if viewModel.selectedTransactionIDs.isEmpty {
+                            Text("Selecciona para Pagar")
+                        } else {
+                            Text("Pagar $\(String(format: "%.2f", viewModel.selectedTotalAmount))")
+                        }
                     }
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color.cyan)
+                    .background(viewModel.selectedTransactionIDs.isEmpty ? Color.gray : Color.cyan)
                     .cornerRadius(25) // Rounded like in image
-                    .shadow(color: .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .shadow(color: viewModel.selectedTransactionIDs.isEmpty ? .clear : .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
+                .disabled(viewModel.selectedTransactionIDs.isEmpty)
                 .padding(20)
                 .background(
                     LinearGradient(
@@ -108,6 +124,11 @@ struct AccountStatusView: View {
             withAnimation {
                 showContent = true
             }
+        }
+        .sheet(isPresented: $showPaymentMethods) {
+            PaymentMethodView(amount: viewModel.selectedTotalAmount)
+                .presentationDetents([.height(600)])
+                .presentationCornerRadius(25)
         }
     }
     
@@ -265,9 +286,17 @@ struct AccountStatusView: View {
 
 struct TransactionRow: View {
     let transaction: Transaction
+    var isSelected: Bool = false
     
     var body: some View {
         HStack(spacing: 15) {
+            // Checkbox for selection (Only if not paid)
+            if transaction.status != .paid {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 24))
+                    .foregroundColor(isSelected ? .cyan : .gray)
+            }
+            
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 15)

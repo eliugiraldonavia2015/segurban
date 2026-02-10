@@ -11,6 +11,7 @@ import Combine
 class AccountStatusViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var selectedTab: Int = 0 // 0: Pendientes, 1: Historial
+    @Published var selectedTransactionIDs: Set<UUID> = []
     
     // Header Data
     @Published var totalPendingAmount: Double = 100.00
@@ -112,5 +113,19 @@ class AccountStatusViewModel: ObservableObject {
         } else {
             overallStatus = .paid
         }
+    }
+    
+    func toggleSelection(for transaction: Transaction) {
+        if selectedTransactionIDs.contains(transaction.id) {
+            selectedTransactionIDs.remove(transaction.id)
+        } else {
+            selectedTransactionIDs.insert(transaction.id)
+        }
+    }
+    
+    var selectedTotalAmount: Double {
+        transactions
+            .filter { selectedTransactionIDs.contains($0.id) }
+            .reduce(0) { $0 + $1.amount }
     }
 }
