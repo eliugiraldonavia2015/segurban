@@ -20,6 +20,7 @@ struct AdminDashboardView: View {
     
     // Navigation
     @State private var showCollection = false
+    @State private var showCreateNotice = false
     
     var body: some View {
         ZStack {
@@ -82,6 +83,11 @@ struct AdminDashboardView: View {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                             ForEach(viewModel.quickActions) { action in
                                 QuickActionCard(action: action)
+                                    .onTapGesture {
+                                        if action.title == "Avisos" {
+                                            showCreateNotice = true
+                                        }
+                                    }
                             }
                         }
                         .padding(.horizontal)
@@ -141,6 +147,9 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showCollection) {
             AdminCollectionView()
+        }
+        .fullScreenCover(isPresented: $showCreateNotice) {
+            AdminCreateNoticeView()
         }
     }
     
