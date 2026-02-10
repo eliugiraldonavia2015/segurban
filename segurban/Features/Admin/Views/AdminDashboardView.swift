@@ -25,6 +25,7 @@ struct AdminDashboardView: View {
     @State private var showCommunity = false
     @State private var showMetrics = false
     @State private var showLogbook = false
+    @State private var showRegisterPayment = false
     
     var body: some View {
         ZStack {
@@ -164,7 +165,7 @@ struct AdminDashboardView: View {
                     }
                     
                     fabOption(title: "Registrar Pago", icon: "dollarsign.circle.fill", color: .green) {
-                        showDisabledAlert = true
+                        showRegisterPayment = true
                         viewModel.showFabMenu = false
                     }
                     
@@ -228,6 +229,9 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showLogbook) {
             AdminLogbookView()
+        }
+        .fullScreenCover(isPresented: $showRegisterPayment) {
+            AdminRegisterPaymentView()
         }
     }
     
