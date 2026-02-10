@@ -28,6 +28,7 @@ struct AdminDashboardView: View {
     @State private var showRegisterPayment = false
     @State private var showSearchVilla = false
     @State private var showVerifyPlate = false
+    @State private var showCameras = false
     
     var body: some View {
         ZStack {
@@ -154,7 +155,8 @@ struct AdminDashboardView: View {
                     }
                     
                     fabOption(title: "Verificar Cámaras", icon: "video.fill", color: .red) {
-                        // Action
+                        showCameras = true
+                        viewModel.showFabMenu = false
                     }
                     
                     fabOption(title: "Verificar Placa", icon: "car.fill", color: .blue) {
@@ -241,6 +243,9 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showVerifyPlate) {
             AdminVerifyPlateView()
+        }
+        .fullScreenCover(isPresented: $showCameras) {
+            AdminCamerasView()
         }
     }
     
