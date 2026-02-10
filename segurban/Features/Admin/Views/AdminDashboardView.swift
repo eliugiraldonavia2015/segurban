@@ -22,6 +22,7 @@ struct AdminDashboardView: View {
     @State private var showCollection = false
     @State private var showCreateNotice = false
     @State private var showDisabledAlert = false
+    @State private var showCommunity = false
     
     var body: some View {
         ZStack {
@@ -89,6 +90,8 @@ struct AdminDashboardView: View {
                                             showCreateNotice = true
                                         } else if action.title == "Panel Pagos" {
                                             showDisabledAlert = true
+                                        } else if action.title == "Comunidad" {
+                                            showCommunity = true
                                         }
                                     }
                             }
@@ -160,6 +163,9 @@ struct AdminDashboardView: View {
                 message: Text("El Panel de Pagos se encuentra temporalmente en mantenimiento. Por favor intente más tarde."),
                 dismissButton: .default(Text("Entendido"))
             )
+        }
+        .fullScreenCover(isPresented: $showCommunity) {
+            AdminCommunityView()
         }
     }
     
