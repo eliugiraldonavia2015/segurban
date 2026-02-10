@@ -72,7 +72,7 @@ struct PackageRegistrationView: View {
                             // Instructions
                             customTextField(
                                 title: "Instrucciones de Entrega",
-                                placeholder: "Ej. Dejar en recepción, llamar al llegar...",
+                                placeholder: "Ej. Dejar en recepción...",
                                 icon: "text.bubble.fill",
                                 text: $viewModel.deliveryInstructions
                             )
