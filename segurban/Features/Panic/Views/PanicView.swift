@@ -16,7 +16,15 @@ struct PanicView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "0D1B2A").ignoresSafeArea()
+            Group {
+                if viewModel.isAlertSent {
+                    Color(hex: "2A0A0A") // Deep Red for urgency
+                } else {
+                    Color(hex: "0D1B2A") // Dark Blue for normal
+                }
+            }
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 0.5), value: viewModel.isAlertSent)
             
             if viewModel.isAlertSent {
                 successView
@@ -197,45 +205,75 @@ struct PanicView: View {
         VStack(spacing: 30) {
             Spacer()
             
-            // Success Animation
+            // Success Animation (Urgent Pulse)
             ZStack {
+                // Outer Pulse
                 Circle()
-                    .fill(Color.green.opacity(0.1))
-                    .frame(width: 200, height: 200)
+                    .fill(Color.red.opacity(0.2))
+                    .frame(width: 250, height: 250)
+                    .scaleEffect(pulseEffect ? 1.2 : 1.0)
+                    .opacity(pulseEffect ? 0 : 0.5)
+                    .animation(Animation.easeOut(duration: 1.5).repeatForever(autoreverses: false), value: pulseEffect)
                 
+                // Inner Pulse
                 Circle()
-                    .fill(Color.green.opacity(0.2))
+                    .fill(Color.red.opacity(0.3))
+                    .frame(width: 200, height: 200)
+                    .scaleEffect(pulseEffect ? 1.1 : 1.0)
+                    .animation(Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulseEffect)
+                
+                // Icon Container
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "FF3B30"), Color(hex: "D70015")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                     .frame(width: 150, height: 150)
+                    .shadow(color: .red.opacity(0.6), radius: 20, x: 0, y: 10)
                 
                 Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.green)
+                    .font(.system(size: 70))
+                    .foregroundColor(.white)
             }
-            .scaleEffect(1.1)
-            .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: viewModel.isAlertSent)
+            .onAppear {
+                pulseEffect = true
+            }
             
             VStack(spacing: 15) {
-                Text("¡Alerta Enviada!")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                Text("¡ALERTA ENVIADA!")
+                    .font(.system(size: 28, weight: .black)) // More urgent font
                     .foregroundColor(.white)
+                    .tracking(1)
                 
-                Text("La emergencia ha sido notificada a los guardias y a las 3 unidades más cercanas.")
+                Text("La emergencia ha sido notificada a los guardias y a las 3 UPS más cercanas.")
                     .font(.body)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.9)) // Higher contrast
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
+                    .lineSpacing(4)
                 
-                Text("La ayuda está en camino.")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.green)
-                    .padding(.top, 5)
+                Text("LA AYUDA ESTÁ EN CAMINO")
+                    .font(.title3)
+                    .fontWeight(.heavy)
+                    .foregroundColor(.red) // Urgent Red
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 20)
+                    .background(Color.red.opacity(0.15))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.top, 10)
             }
             
             VStack(spacing: 10) {
                 Text("Enviando ayuda a:")
                     .font(.caption)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
                     .textCase(.uppercase)
                     .tracking(1)
@@ -247,13 +285,17 @@ struct PanicView: View {
                 
                 Text(viewModel.locationName)
                     .font(.headline)
-                    .foregroundColor(.cyan)
+                    .foregroundColor(.red) // Red for location urgency
             }
-            .padding()
+            .padding(25)
             .frame(maxWidth: .infinity)
-            .background(Color(hex: "152636"))
+            .background(Color(hex: "1A0505")) // Dark Red tint background
             .cornerRadius(20)
-            .padding(.horizontal, 40)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+            )
+            .padding(.horizontal, 30)
             
             Spacer()
             
@@ -265,15 +307,25 @@ struct PanicView: View {
             }) {
                 Text("Cerrar")
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.white)
+                    .padding(.vertical, 18)
+                    .background(Color.gray.opacity(0.3))
                     .cornerRadius(15)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 40)
         }
+        .background(
+            // Subtle red gradient background for urgency
+            RadialGradient(
+                gradient: Gradient(colors: [Color.red.opacity(0.15), Color.clear]),
+                center: .center,
+                startRadius: 50,
+                endRadius: 400
+            )
+        )
     }
 }
 
