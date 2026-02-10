@@ -311,7 +311,7 @@ struct ReservationsView: View {
                             }
                         }
                         
-                        Spacer(minLength: 150) // Space for bottom sheet
+                        Spacer(minLength: showPaymentOptions ? (selectedPaymentMethod != nil ? 500 : 300) : 150) // Space for bottom sheet
                     }
                     .padding(.horizontal)
                 }
