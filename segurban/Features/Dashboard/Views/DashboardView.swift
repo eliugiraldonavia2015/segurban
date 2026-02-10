@@ -153,11 +153,14 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showPackages) {
             PackageRegistrationView()
         }
+        .fullScreenCover(isPresented: $showPanicAlert) {
+            PanicView()
+        }
     }
     
     // MARK: - Subviews
     
-    var headerView: some View {
+    private var headerView: some View {
         HStack {
             HStack(spacing: 12) {
                 AsyncImage(url: URL(string: "https://i.pravatar.cc/150?img=11")) { image in
@@ -337,7 +340,7 @@ struct DashboardView: View {
     }
     
     var panicButton: some View {
-        Button(action: { showPanicAlert.toggle() }) {
+        Button(action: { showPanicAlert = true }) {
             HStack(spacing: 15) {
                 ZStack {
                     Circle()

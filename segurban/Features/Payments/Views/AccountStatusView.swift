@@ -127,7 +127,8 @@ struct AccountStatusView: View {
         }
         .sheet(isPresented: $showPaymentMethods) {
             PaymentMethodView(amount: viewModel.selectedTotalAmount)
-                .presentationDetents([.height(600)])
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
                 .presentationCornerRadius(25)
         }
     }
