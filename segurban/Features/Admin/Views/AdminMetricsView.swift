@@ -16,6 +16,10 @@ struct AdminMetricsView: View {
     @State private var showContent = false
     @State private var animatedPercentage: Double = 0.0
     
+    // Edit Sheet State
+    @State private var showMaintenanceSheet = false
+    @State private var editingItem: MaintenanceStat? = nil
+    
     var body: some View {
         ZStack {
             Color(hex: "0D1B2A").ignoresSafeArea()
@@ -33,19 +37,19 @@ struct AdminMetricsView: View {
                             .opacity(showContent ? 1 : 0)
                             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showContent)
                         
-                        // 2. Monthly Trend Graph
-                        monthlyTrendCard
+                        // 2. Delinquency Stats (Replaces Trend)
+                        delinquencyCard
                             .offset(y: showContent ? 0 : 40)
                             .opacity(showContent ? 1 : 0)
                             .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1), value: showContent)
                         
-                        // 3. Maintenance Stats Grid
-                        maintenanceGrid
+                        // 3. Maintenance Stats (Editable)
+                        maintenanceSection
                             .offset(y: showContent ? 0 : 50)
                             .opacity(showContent ? 1 : 0)
                             .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: showContent)
                         
-                        // 4. Operational Stats
+                        // 4. Operational Stats (Updated)
                         operationalStats
                             .offset(y: showContent ? 0 : 60)
                             .opacity(showContent ? 1 : 0)
@@ -56,6 +60,28 @@ struct AdminMetricsView: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
                 }
+            }
+            
+            // Edit Sheet Overlay
+            if showMaintenanceSheet {
+                MaintenanceEditSheet(
+                    item: editingItem,
+                    onSave: { title, count in
+                        if let item = editingItem {
+                            viewModel.updateMaintenanceItem(id: item.id, title: title, count: count)
+                        } else {
+                            viewModel.addMaintenanceItem(title: title, count: count)
+                        }
+                        showMaintenanceSheet = false
+                        editingItem = nil
+                    },
+                    onDismiss: {
+                        showMaintenanceSheet = false
+                        editingItem = nil
+                    }
+                )
+                .transition(.move(edge: .bottom))
+                .zIndex(100)
             }
         }
         .onAppear {
@@ -177,78 +203,110 @@ struct AdminMetricsView: View {
         )
     }
     
-    var monthlyTrendCard: some View {
+    var delinquencyCard: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Tendencia Semestral")
+            Text("Estado de Morosidad")
                 .font(.headline)
                 .foregroundColor(.white)
             
-            HStack(alignment: .bottom, spacing: 12) {
-                ForEach(viewModel.collectionHistory) { metric in
+            HStack(spacing: 0) {
+                ForEach(viewModel.delinquencyStats) { stat in
                     VStack {
-                        Spacer()
-                        
-                        // Bar
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(
-                                LinearGradient(
-                                    colors: metric.percentage >= 0.8 ? [.cyan, .blue] : [.gray.opacity(0.5), .gray.opacity(0.3)],
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
-                            )
-                            .frame(height: showContent ? CGFloat(metric.percentage * 120) : 0) // Animation height
-                            .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.2), value: showContent)
-                        
-                        Text(metric.month)
-                            .font(.caption2)
+                        Text("\(stat.count)")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(stat.color)
+                        Text(stat.status)
+                            .font(.caption)
                             .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    if stat.id != viewModel.delinquencyStats.last?.id {
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .frame(height: 40)
                     }
                 }
             }
-            .frame(height: 150)
-            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(Color(hex: "1E1E1E"))
+            .cornerRadius(15)
         }
         .padding(20)
         .background(Color(hex: "152636"))
         .cornerRadius(25)
     }
     
-    var maintenanceGrid: some View {
+    var maintenanceSection: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Mantenimiento Realizado")
-                .font(.headline)
-                .foregroundColor(.white)
+            HStack {
+                Text("Mantenimiento Realizado")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Button(action: {
+                    editingItem = nil
+                    withAnimation { showMaintenanceSheet = true }
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.cyan)
+                }
+            }
             
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
+            VStack(spacing: 12) {
                 ForEach(viewModel.maintenanceStats) { stat in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(stat.color.opacity(0.15))
-                                .frame(width: 45, height: 45)
-                            
-                            Image(systemName: stat.icon)
-                                .foregroundColor(stat.color)
-                                .font(.system(size: 20))
-                        }
+                    HStack {
+                        Text(stat.title)
+                            .font(.subheadline)
+                            .foregroundColor(.white)
                         
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(stat.count)")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text(stat.title)
-                                .font(.caption2)
-                                .foregroundColor(.gray)
-                                .lineLimit(2)
-                        }
                         Spacer()
+                        
+                        Text("\(stat.count) veces")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.cyan)
+                        
+                        // Edit/Delete Menu
+                        Menu {
+                            Button(action: {
+                                editingItem = stat
+                                withAnimation { showMaintenanceSheet = true }
+                            }) {
+                                Label("Editar", systemImage: "pencil")
+                            }
+                            
+                            Button(role: .destructive, action: {
+                                if let index = viewModel.maintenanceStats.firstIndex(where: { $0.id == stat.id }) {
+                                    withAnimation {
+                                        viewModel.removeMaintenanceItem(at: index)
+                                    }
+                                }
+                            }) {
+                                Label("Eliminar", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .foregroundColor(.gray)
+                                .padding(8)
+                                .background(Color.white.opacity(0.05))
+                                .clipShape(Circle())
+                        }
                     }
-                    .padding(12)
+                    .padding()
                     .background(Color(hex: "1E1E1E"))
-                    .cornerRadius(15)
+                    .cornerRadius(12)
+                }
+                
+                if viewModel.maintenanceStats.isEmpty {
+                    Text("No hay registros de mantenimiento.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding()
                 }
             }
         }
@@ -259,45 +317,111 @@ struct AdminMetricsView: View {
     
     var operationalStats: some View {
         HStack(spacing: 15) {
-            // Visits Stat
+            // Open Reports
             VStack(spacing: 10) {
-                Image(systemName: "person.2.fill")
+                Image(systemName: "exclamationmark.bubble.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(.purple)
+                    .foregroundColor(.orange)
                 
-                Text("\(viewModel.totalVisits)")
+                Text("\(viewModel.openReports)")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                Text("Visitas Totales")
+                Text("Reportes Pendientes")
                     .font(.caption)
                     .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .padding(20)
             .background(Color(hex: "152636"))
             .cornerRadius(20)
             
-            // Alerts Stat
+            // Monthly Fines
             VStack(spacing: 10) {
-                Image(systemName: "bell.badge.fill")
+                Image(systemName: "doc.text.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(.orange)
+                    .foregroundColor(.red)
                 
-                Text("\(viewModel.activeAlerts)")
+                Text("\(viewModel.monthlyFines)")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                Text("Alertas Activas")
+                Text("Multas del Mes")
                     .font(.caption)
                     .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .padding(20)
             .background(Color(hex: "152636"))
             .cornerRadius(20)
+        }
+    }
+}
+
+// MARK: - Helper Views
+
+struct MaintenanceEditSheet: View {
+    let item: MaintenanceStat?
+    let onSave: (String, Int) -> Void
+    let onDismiss: () -> Void
+    
+    @State private var title: String = ""
+    @State private var countString: String = ""
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.5).ignoresSafeArea()
+                .onTapGesture { onDismiss() }
+            
+            VStack(spacing: 20) {
+                Text(item == nil ? "Agregar Mantenimiento" : "Editar Mantenimiento")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                TextField("Título (ej. Poda)", text: $title)
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(10)
+                    .foregroundColor(.white)
+                
+                TextField("Cantidad", text: $countString)
+                    .keyboardType(.numberPad)
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(10)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 15) {
+                    Button("Cancelar") { onDismiss() }
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    Button("Guardar") {
+                        if let count = Int(countString), !title.isEmpty {
+                            onSave(title, count)
+                        }
+                    }
+                    .foregroundColor(.cyan)
+                    .fontWeight(.bold)
+                }
+                .padding(.top, 10)
+            }
+            .padding(25)
+            .background(Color(hex: "152636"))
+            .cornerRadius(20)
+            .padding(30)
+            .shadow(radius: 20)
+            .onAppear {
+                if let item = item {
+                    title = item.title
+                    countString = String(item.count)
+                }
+            }
         }
     }
 }

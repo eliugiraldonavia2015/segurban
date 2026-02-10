@@ -8,35 +8,39 @@
 import SwiftUI
 import Combine
 
-struct CollectionMetric: Identifiable {
+struct DelinquencyMetric: Identifiable {
     let id = UUID()
-    let month: String
-    let percentage: Double
+    let status: String
+    let count: Int
+    let color: Color
 }
 
 struct MaintenanceStat: Identifiable {
     let id = UUID()
-    let title: String
-    let count: Int
-    let icon: String
-    let color: Color
+    var title: String
+    var count: Int
 }
 
 class AdminMetricsViewModel: ObservableObject {
     // Collection Metrics
     @Published var currentCollectionPercentage: Double = 0.0
     @Published var previousCollectionPercentage: Double = 0.0
-    @Published var collectionHistory: [CollectionMetric] = []
+    
+    // Delinquency Metrics (Replacing Trend)
+    @Published var delinquencyStats: [DelinquencyMetric] = []
     
     // Maintenance Metrics
     @Published var maintenanceStats: [MaintenanceStat] = []
     
-    // Security/Access Metrics
-    @Published var totalVisits: Int = 0
-    @Published var activeAlerts: Int = 0
+    // Operational Metrics (Replacing Visits/Alerts)
+    @Published var openReports: Int = 0
+    @Published var monthlyFines: Int = 0
     
     // Animation triggers
     @Published var isAnimated: Bool = false
+    
+    // Edit State
+    @Published var isEditingMaintenance: Bool = false
     
     init() {
         loadData()
@@ -49,26 +53,43 @@ class AdminMetricsViewModel: ObservableObject {
         currentCollectionPercentage = 0.85
         previousCollectionPercentage = 0.78
         
-        collectionHistory = [
-            CollectionMetric(month: "Jun", percentage: 0.75),
-            CollectionMetric(month: "Jul", percentage: 0.82),
-            CollectionMetric(month: "Ago", percentage: 0.80),
-            CollectionMetric(month: "Sep", percentage: 0.78),
-            CollectionMetric(month: "Oct", percentage: 0.85)
+        // Delinquency Breakdown
+        delinquencyStats = [
+            DelinquencyMetric(status: "Al Día", count: 120, color: .green),
+            DelinquencyMetric(status: "Pendiente", count: 15, color: .orange),
+            DelinquencyMetric(status: "Moroso", count: 7, color: .red)
         ]
         
+        // Maintenance - No icons/colors as requested, simplified
         maintenanceStats = [
-            MaintenanceStat(title: "Podas de Jardín", count: 12, icon: "leaf.fill", color: .green),
-            MaintenanceStat(title: "Limpieza Piscina", count: 8, icon: "drop.fill", color: .cyan),
-            MaintenanceStat(title: "Reparación Luces", count: 3, icon: "lightbulb.fill", color: .yellow),
-            MaintenanceStat(title: "Recolección Basura", count: 20, icon: "trash.fill", color: .orange)
+            MaintenanceStat(title: "Podas de Jardín", count: 12),
+            MaintenanceStat(title: "Limpieza Piscina", count: 8),
+            MaintenanceStat(title: "Reparación Luces", count: 3),
+            MaintenanceStat(title: "Recolección Basura", count: 20)
         ]
         
-        totalVisits = 1250
-        activeAlerts = 2
+        // New Operational Stats
+        openReports = 5
+        monthlyFines = 3
     }
     
     var collectionGrowth: Double {
         return currentCollectionPercentage - previousCollectionPercentage
+    }
+    
+    // Maintenance Actions
+    func addMaintenanceItem(title: String, count: Int) {
+        maintenanceStats.append(MaintenanceStat(title: title, count: count))
+    }
+    
+    func removeMaintenanceItem(at index: Int) {
+        maintenanceStats.remove(at: index)
+    }
+    
+    func updateMaintenanceItem(id: UUID, title: String, count: Int) {
+        if let index = maintenanceStats.firstIndex(where: { $0.id == id }) {
+            maintenanceStats[index].title = title
+            maintenanceStats[index].count = count
+        }
     }
 }
