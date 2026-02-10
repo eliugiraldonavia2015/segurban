@@ -18,6 +18,9 @@ struct AdminDashboardView: View {
     @State private var showActivity = false
     @State private var showFab = false
     
+    // Navigation
+    @State private var showCollection = false
+    
     var body: some View {
         ZStack {
             // Background
@@ -50,6 +53,11 @@ struct AdminDashboardView: View {
                         HStack(spacing: 15) {
                             ForEach(viewModel.stats) { stat in
                                 StatCard(stat: stat)
+                                    .onTapGesture {
+                                        if stat.title == "COBRANZA" {
+                                            showCollection = true
+                                        }
+                                    }
                             }
                         }
                         .padding(.horizontal)
@@ -130,6 +138,9 @@ struct AdminDashboardView: View {
         }
         .onAppear {
             animateEntrance()
+        }
+        .fullScreenCover(isPresented: $showCollection) {
+            AdminCollectionView()
         }
     }
     
