@@ -88,7 +88,7 @@ struct AdminDashboardView: View {
                                     .onTapGesture {
                                         if action.title == "Avisos" {
                                             showCreateNotice = true
-                                        } else if action.title == "Panel Pagos" {
+                                        } else if action.title == "Panel Pagos" || action.title == "Auditoría" {
                                             showDisabledAlert = true
                                         } else if action.title == "Comunidad" {
                                             showCommunity = true
@@ -124,13 +124,65 @@ struct AdminDashboardView: View {
                 .padding(.top, 10)
             }
             
+            // FAB Menu Overlay
+            if viewModel.showFabMenu {
+                Color.black.opacity(0.7)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation {
+                            viewModel.showFabMenu = false
+                        }
+                    }
+                    .transition(.opacity)
+                
+                VStack(alignment: .trailing, spacing: 20) {
+                    Spacer()
+                    
+                    fabOption(title: "Ver Métricas", icon: "chart.xyaxis.line", color: .purple) {
+                        // Action
+                    }
+                    
+                    fabOption(title: "Verificar Bitácora", icon: "book.fill", color: .orange) {
+                        // Action
+                    }
+                    
+                    fabOption(title: "Verificar Cámaras", icon: "video.fill", color: .red) {
+                        // Action
+                    }
+                    
+                    fabOption(title: "Verificar Placa", icon: "car.fill", color: .blue) {
+                        // Action
+                    }
+                    
+                    fabOption(title: "Buscar Villa", icon: "house.fill", color: .cyan) {
+                        showCollection = true
+                        viewModel.showFabMenu = false
+                    }
+                    
+                    fabOption(title: "Registrar Pago", icon: "dollarsign.circle.fill", color: .green) {
+                        showDisabledAlert = true
+                        viewModel.showFabMenu = false
+                    }
+                    
+                    fabOption(title: "Crear Aviso", icon: "megaphone.fill", color: .yellow) {
+                        showCreateNotice = true
+                        viewModel.showFabMenu = false
+                    }
+                    
+                    Spacer().frame(height: 80) // Space for FAB
+                }
+                .padding(.trailing, 30)
+                .padding(.bottom, 20)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
             // FAB
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
                     Button(action: {
-                        withAnimation(.spring()) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             viewModel.showFabMenu.toggle()
                         }
                     }) {
@@ -138,9 +190,9 @@ struct AdminDashboardView: View {
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.black)
                             .frame(width: 60, height: 60)
-                            .background(Color.cyan)
+                            .background(viewModel.showFabMenu ? Color.white : Color.cyan)
                             .clipShape(Circle())
-                            .shadow(color: .cyan.opacity(0.4), radius: 10, x: 0, y: 5)
+                            .shadow(color: (viewModel.showFabMenu ? Color.white : Color.cyan).opacity(0.4), radius: 10, x: 0, y: 5)
                     }
                     .rotationEffect(.degrees(viewModel.showFabMenu ? 45 : 0))
                     .scaleEffect(showFab ? 1 : 0)
@@ -160,7 +212,7 @@ struct AdminDashboardView: View {
         .alert(isPresented: $showDisabledAlert) {
             Alert(
                 title: Text("Módulo Desactivado"),
-                message: Text("El Panel de Pagos se encuentra temporalmente en mantenimiento. Por favor intente más tarde."),
+                message: Text("Esta función se encuentra temporalmente en mantenimiento. Por favor intente más tarde."),
                 dismissButton: .default(Text("Entendido"))
             )
         }
@@ -232,6 +284,29 @@ struct AdminDashboardView: View {
         }
         .padding(.horizontal)
     }
+    
+    func fabOption(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 15) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .shadow(color: .black, radius: 2)
+                
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 45, height: 45)
+                        .shadow(color: color.opacity(0.4), radius: 8, x: 0, y: 4)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(.black)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Subviews
@@ -290,7 +365,7 @@ struct QuickActionCard: View {
     let action: QuickAction
     
     var isDisabled: Bool {
-        action.title == "Panel Pagos"
+        action.title == "Panel Pagos" || action.title == "Auditoría"
     }
     
     var body: some View {
