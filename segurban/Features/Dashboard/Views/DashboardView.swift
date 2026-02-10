@@ -14,6 +14,7 @@ struct DashboardView: View {
     @State private var showReservations = false
     @State private var showNotices = false
     @State private var showPayments = false
+    @State private var showVisits = false
     
     var body: some View {
         ZStack {
@@ -58,7 +59,9 @@ struct DashboardView: View {
                             Button(action: { showReservations = true }) {
                                 serviceButton(icon: "calendar", title: "Reservas")
                             }
-                            serviceButton(icon: "person.2.fill", title: "Visitas")
+                            Button(action: { showVisits = true }) {
+                                serviceButton(icon: "person.2.fill", title: "Visitas")
+                            }
                             serviceButton(icon: "shippingbox.fill", title: "Paquetes")
                             serviceButton(icon: "doc.text.fill", title: "Pagos")
                         }
@@ -138,6 +141,9 @@ struct DashboardView: View {
         }
         .fullScreenCover(isPresented: $showPayments) {
             AccountStatusView()
+        }
+        .fullScreenCover(isPresented: $showVisits) {
+            VisitsView()
         }
     }
     
