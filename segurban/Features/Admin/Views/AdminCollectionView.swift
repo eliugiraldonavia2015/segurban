@@ -149,7 +149,7 @@ struct HouseDebtCard: View {
             // House Icon/Avatar
             ZStack {
                 Circle()
-                    .fill(Color(hex: "152636"))
+                    .fill(Color.black.opacity(0.3))
                     .frame(width: 50, height: 50)
                     .overlay(Circle().stroke(house.status.color, lineWidth: 2))
                 
@@ -158,19 +158,21 @@ struct HouseDebtCard: View {
                     .foregroundColor(.white)
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(house.ownerName)
                     .font(.headline)
                     .foregroundColor(.white)
                 
-                Text(house.status.rawValue)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(house.status.color)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(house.status.color.opacity(0.2))
-                    .cornerRadius(4)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(house.status.color)
+                        .frame(width: 8, height: 8)
+                    
+                    Text(house.status.rawValue)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.gray)
+                }
             }
             
             Spacer()
@@ -180,7 +182,7 @@ struct HouseDebtCard: View {
                     Text("$\(String(format: "%.2f", house.totalDebt))")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.red)
+                        .foregroundColor(.white)
                 } else {
                     Text("Al día")
                         .font(.subheadline)
@@ -201,14 +203,22 @@ struct HouseDebtCard: View {
                     }
                     .font(.caption)
                     .foregroundColor(.gray)
+                    .padding(.top, 2)
                 }
             }
         }
-        .padding()
-        .background(Color(hex: "1E1E1E")) // Slightly lighter than bg
-        .cornerRadius(15)
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [Color(hex: "152636"), Color(hex: "1A2F45")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 15)
+            RoundedRectangle(cornerRadius: 20)
                 .stroke(Color.white.opacity(0.05), lineWidth: 1)
         )
     }
