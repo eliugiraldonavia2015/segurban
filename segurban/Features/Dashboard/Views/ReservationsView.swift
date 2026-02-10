@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+struct ReservationItem: Identifiable {
+    let id = UUID()
+    let facility: String
+    let time: String
+    let status: String
+}
+
 struct ReservationsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedFacility: String = "Cancha de Tenis"
@@ -14,12 +21,31 @@ struct ReservationsView: View {
     @State private var selectedStartSlot: Int? = nil
     @State private var selectedEndSlot: Int? = nil
     
+    // Payment & Confirmation
+    @State private var showPaymentOptions = false
+    @State private var selectedPaymentMethod: String = "Tarjeta"
+    @State private var showSuccess = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    @State private var myReservations: [ReservationItem] = [
+        ReservationItem(facility: "Cancha de Tenis A", time: "Hoy, 18:00 - 19:00", status: "ACTIVA")
+    ]
+    
     let facilities = ["Piscina", "Cancha de Tenis", "Cancha de Fútbol", "Salón de Eventos", "BBQ"]
     let days = Array(1...31)
     let weekDays = ["D", "L", "M", "M", "J", "V", "S"]
-    let timeSlots = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
-    // Mock unavailable slots indices
-    let unavailableSlots = [1, 5] // 10:00, 14:00 unavailable
+    
+    // 07:00 to 22:00 (30 min intervals)
+    let timeSlots = [
+        "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+        "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+        "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
+        "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+    ]
+    
+    // Mock unavailable slots indices (consecutive)
+    let unavailableSlots = [8, 9] // 11:00, 11:30 unavailable
     
     var body: some View {
         ZStack {
@@ -201,55 +227,64 @@ struct ReservationsView: View {
                                     .foregroundColor(.cyan)
                             }
                             
-                            HStack(spacing: 15) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.green.opacity(0.2))
-                                        .frame(width: 50, height: 50)
-                                    Image(systemName: "tennis.racket")
-                                        .foregroundColor(.green)
-                                        .font(.system(size: 20))
+                            if myReservations.isEmpty {
+                                Text("No tienes reservas activas")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                    .padding(.vertical, 10)
+                            } else {
+                                ForEach(myReservations) { reservation in
+                                    HStack(spacing: 15) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.green.opacity(0.2))
+                                                .frame(width: 50, height: 50)
+                                            Image(systemName: "tennis.racket")
+                                                .foregroundColor(.green)
+                                                .font(.system(size: 20))
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(reservation.facility)
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                            Text(reservation.time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Text(reservation.status)
+                                            .font(.caption2)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.green)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.green.opacity(0.2))
+                                            .cornerRadius(6)
+                                    }
+                                    .padding()
+                                    .background(Color(hex: "152636"))
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                    )
+                                    // Green indicator bar on left
+                                    .overlay(
+                                        Rectangle()
+                                            .fill(Color.green)
+                                            .frame(width: 4)
+                                            .cornerRadius(2, corners: [.topLeft, .bottomLeft]),
+                                        alignment: .leading
+                                    )
                                 }
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Cancha de Tenis A")
-                                        .font(.subheadline)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                    Text("Hoy, 18:00 - 19:00")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                Spacer()
-                                
-                                Text("ACTIVA")
-                                    .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.green)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.green.opacity(0.2))
-                                    .cornerRadius(6)
                             }
-                            .padding()
-                            .background(Color(hex: "152636"))
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
-                            )
-                            // Green indicator bar on left
-                            .overlay(
-                                Rectangle()
-                                    .fill(Color.green)
-                                    .frame(width: 4)
-                                    .cornerRadius(2, corners: [.topLeft, .bottomLeft]),
-                                alignment: .leading
-                            )
                         }
                         
-                        Spacer(minLength: 100) // Space for bottom sheet
+                        Spacer(minLength: 150) // Space for bottom sheet
                     }
                     .padding(.horizontal)
                 }
@@ -284,7 +319,40 @@ struct ReservationsView: View {
                         }
                     }
                     
-                    Button(action: {}) {
+                    if showPaymentOptions {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("⚠️ Horario Nocturno: $20.00/hr por iluminación")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                            
+                            Text("Método de Pago")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.gray)
+                            
+                            HStack(spacing: 10) {
+                                ForEach(["Tarjeta", "Transferencia", "Deuda"], id: \.self) { method in
+                                    Button(action: { selectedPaymentMethod = method }) {
+                                        Text(method)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(selectedPaymentMethod == method ? .black : .white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(selectedPaymentMethod == method ? Color.cyan : Color.white.opacity(0.1))
+                                            )
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(12)
+                    }
+                    
+                    Button(action: { confirmReservation() }) {
                         HStack {
                             Image(systemName: "calendar.badge.plus")
                             Text("Confirmar Reserva")
@@ -312,6 +380,41 @@ struct ReservationsView: View {
                 )
             }
             .ignoresSafeArea(edges: .bottom)
+            
+            // Success Overlay
+            if showSuccess {
+                ZStack {
+                    Color.black.opacity(0.7).ignoresSafeArea()
+                    
+                    VStack(spacing: 20) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.green)
+                            .scaleEffect(showSuccess ? 1.0 : 0.5)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showSuccess)
+                        
+                        Text("¡Reserva Confirmada!")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text("Tu reserva ha sido añadida exitosamente.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(40)
+                    .background(Color(hex: "152636"))
+                    .cornerRadius(20)
+                    .shadow(radius: 20)
+                    .padding(40)
+                }
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
+        .alert(isPresented: $showError) {
+            Alert(title: Text("Aviso"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
         }
     }
     
@@ -326,43 +429,79 @@ struct ReservationsView: View {
     
     // MARK: - Logic
     
+    func checkPaymentRequirement() {
+        showPaymentOptions = false
+        if let start = selectedStartSlot, let end = selectedEndSlot {
+            // Check if any selected slot is >= 17:00
+            // 17:00 index in our array is 20
+            if start >= 20 || end >= 20 {
+                showPaymentOptions = true
+            }
+        } else if let start = selectedStartSlot {
+             if start >= 20 { showPaymentOptions = true }
+        }
+    }
+
     func handleSlotSelection(_ index: Int) {
         withAnimation {
             // Case 1: Start selection
             if selectedStartSlot == nil {
                 selectedStartSlot = index
-                selectedEndSlot = nil
-            }
-            // Case 2: Deselect if clicking start again
-            else if selectedStartSlot == index && selectedEndSlot == nil {
-                selectedStartSlot = nil
-            }
-            // Case 3: Selecting end slot
-            else if let start = selectedStartSlot, selectedEndSlot == nil {
-                if index == start {
-                    // Clicking start again when end is nil -> deselect
-                    selectedStartSlot = nil
-                } else if index == start + 1 {
-                    // Valid next slot (2 hours max)
-                    selectedEndSlot = index
-                } else if index == start - 1 {
-                    // Clicked previous slot, swap
-                    selectedEndSlot = start
-                    selectedStartSlot = index
+                // Auto select next slot (1 hour total) if available and not blocked
+                let nextSlot = index + 1
+                if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
+                    selectedEndSlot = nextSlot
                 } else {
-                    // Clicked far away, reset to new start
-                    selectedStartSlot = index
-                    selectedEndSlot = nil
+                    selectedEndSlot = index
                 }
             }
-            // Case 4: Range already selected, reset to new start
-            else {
-                selectedStartSlot = index
-                selectedEndSlot = nil
+            // Case 2: Extend or Change
+            else if let start = selectedStartSlot {
+                if index == start {
+                    // Click start -> Reset
+                    selectedStartSlot = nil
+                    selectedEndSlot = nil
+                } else if index > start {
+                    // Selecting a later slot
+                    let count = index - start + 1
+                    if count > 4 {
+                        errorMessage = "Solo se pueden seleccionar máximo 2 horas por villa"
+                        showError = true
+                    } else {
+                        // Check availability in between
+                        var blocked = false
+                        for i in start...index {
+                            if unavailableSlots.contains(i) { blocked = true }
+                        }
+                        
+                        if blocked {
+                            // Reset to new start
+                            selectedStartSlot = index
+                            let nextSlot = index + 1
+                            if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
+                                selectedEndSlot = nextSlot
+                            } else {
+                                selectedEndSlot = index
+                            }
+                        } else {
+                            selectedEndSlot = index
+                        }
+                    }
+                } else {
+                    // Clicked before start -> New start
+                    selectedStartSlot = index
+                    let nextSlot = index + 1
+                    if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
+                        selectedEndSlot = nextSlot
+                    } else {
+                        selectedEndSlot = index
+                    }
+                }
             }
         }
+        checkPaymentRequirement()
     }
-    
+
     func isSlotSelected(_ index: Int) -> Bool {
         if let start = selectedStartSlot {
             if let end = selectedEndSlot {
@@ -377,40 +516,90 @@ struct ReservationsView: View {
         if isUnavailable {
             return Color(hex: "0D1B2A").opacity(0.5)
         }
-        if isSlotSelected(index) {
-            if let start = selectedStartSlot, let end = selectedEndSlot {
-                if index > start && index < end {
-                    return Color.cyan.opacity(0.3) // Middle of range (if range > 2, but max is 2 so irrelevant here but good practice)
+        if let start = selectedStartSlot {
+            if index == start {
+                return Color.cyan
+            }
+            if let end = selectedEndSlot {
+                if index > start && index <= end {
+                    return Color.gray.opacity(0.5)
                 }
             }
-            return Color.cyan
         }
         return Color(hex: "152636")
     }
-    
+
     func formatSelectedTime() -> String {
         guard let start = selectedStartSlot else { return "Seleccionar hora" }
         let startTime = timeSlots[start]
         
         if let end = selectedEndSlot {
-            // End time is the slot time + 1 hour usually, or just the slot label
-            // Let's assume the slot label is the start of that hour.
-            // So if range is 11:00 (start) - 12:00 (end selected), booking is 11:00 - 13:00?
-            // User said "choose max 2 hours", logic: selecting 2 consecutive slots = 2 hours.
-            // e.g. Select 11:00 and 12:00 -> 11:00 to 13:00.
+            // End time is the END of the end slot.
+            // If slot is 07:00, it ends at 07:30.
+            // If slot is 07:30, it ends at 08:00.
             
-            // Logic to get end time string (end slot + 1 hour)
-            // Simple approach: show range "11:00 - 13:00"
+            let endTimeString: String
+            let endSlotTime = timeSlots[end]
             
-            let endHour = Int(timeSlots[end].prefix(2))! + 1
-            let endTimeString = String(format: "%02d:00", endHour)
+            // Parse end slot time
+            let components = endSlotTime.split(separator: ":")
+            if components.count == 2, let h = Int(components[0]), let m = Int(components[1]) {
+                var newM = m + 30
+                var newH = h
+                if newM >= 60 {
+                    newM -= 60
+                    newH += 1
+                }
+                endTimeString = String(format: "%02d:%02d", newH, newM)
+            } else {
+                endTimeString = endSlotTime
+            }
             
             return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
         } else {
-            // Single slot (1 hour)
-            let startHour = Int(startTime.prefix(2))!
-            let endTimeString = String(format: "%02d:00", startHour + 1)
-            return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
+            // Single slot (30 min)
+             let components = startTime.split(separator: ":")
+            if components.count == 2, let h = Int(components[0]), let m = Int(components[1]) {
+                var newM = m + 30
+                var newH = h
+                if newM >= 60 {
+                    newM -= 60
+                    newH += 1
+                }
+                let endTimeString = String(format: "%02d:%02d", newH, newM)
+                return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
+            }
+            return "\(selectedDate) Oct, \(startTime)"
+        }
+    }
+    
+    func confirmReservation() {
+        guard let start = selectedStartSlot else { return }
+        
+        // Add to list
+        let timeString = formatSelectedTime()
+        // Extract just the time part
+        let parts = timeString.components(separatedBy: ", ")
+        let timeOnly = parts.count > 1 ? parts[1] : timeString
+        
+        let newReservation = ReservationItem(
+            facility: selectedFacility,
+            time: "Hoy, \(timeOnly)",
+            status: "ACTIVA"
+        )
+        
+        myReservations.append(newReservation)
+        
+        withAnimation {
+            showSuccess = true
+        }
+        
+        // Hide success after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation {
+                showSuccess = false
+                dismiss()
+            }
         }
     }
 }
