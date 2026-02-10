@@ -12,6 +12,7 @@ struct DashboardView: View {
     @State private var showPanicAlert = false
     @State private var showGenerateAccess = false
     @State private var showReservations = false
+    @State private var showNotices = false
     
     var body: some View {
         ZStack {
@@ -67,7 +68,7 @@ struct DashboardView: View {
                                 .font(.headline)
                                 .foregroundColor(.white)
                             Spacer()
-                            Button("Ver todo") { }
+                            Button("Ver todo") { showNotices = true }
                                 .font(.subheadline)
                                 .foregroundColor(.cyan)
                         }
@@ -128,6 +129,9 @@ struct DashboardView: View {
         }
         .fullScreenCover(isPresented: $showReservations) {
             ReservationsView()
+        }
+        .fullScreenCover(isPresented: $showNotices) {
+            NoticeBoardView()
         }
     }
     
