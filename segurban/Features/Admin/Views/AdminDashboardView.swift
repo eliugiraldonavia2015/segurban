@@ -21,6 +21,7 @@ struct AdminDashboardView: View {
     // Navigation
     @State private var showCollection = false
     @State private var showCreateNotice = false
+    @State private var showDisabledAlert = false
     
     var body: some View {
         ZStack {
@@ -86,6 +87,8 @@ struct AdminDashboardView: View {
                                     .onTapGesture {
                                         if action.title == "Avisos" {
                                             showCreateNotice = true
+                                        } else if action.title == "Panel Pagos" {
+                                            showDisabledAlert = true
                                         }
                                     }
                             }
@@ -150,6 +153,13 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showCreateNotice) {
             AdminCreateNoticeView()
+        }
+        .alert(isPresented: $showDisabledAlert) {
+            Alert(
+                title: Text("Módulo Desactivado"),
+                message: Text("El Panel de Pagos se encuentra temporalmente en mantenimiento. Por favor intente más tarde."),
+                dismissButton: .default(Text("Entendido"))
+            )
         }
     }
     
@@ -273,37 +283,59 @@ struct StatCard: View {
 struct QuickActionCard: View {
     let action: QuickAction
     
+    var isDisabled: Bool {
+        action.title == "Panel Pagos"
+    }
+    
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             // Gradient Background
-            LinearGradient(
-                colors: [Color(hex: "152636"), Color(hex: "0D1B2A")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            if isDisabled {
+                Color(hex: "1E1E1E") // Flat dark gray for disabled
+            } else {
+                LinearGradient(
+                    colors: [Color(hex: "152636"), Color(hex: "0D1B2A")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
             
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: action.icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.cyan)
+                    .foregroundColor(isDisabled ? .gray : .cyan)
                     .padding(.bottom, 10)
+                    .grayscale(isDisabled ? 1.0 : 0.0)
                 
                 Text(action.title)
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(isDisabled ? .gray : .white)
+                    .strikethrough(isDisabled, color: .gray)
                 
                 Text(action.subtitle)
                     .font(.caption)
                     .foregroundColor(.gray)
             }
             .padding(15)
+            .opacity(isDisabled ? 0.6 : 1.0)
+            
+            // Diagonal Line Overlay for Disabled
+            if isDisabled {
+                GeometryReader { geo in
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: geo.size.height))
+                        path.addLine(to: CGPoint(x: geo.size.width, y: 0))
+                    }
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 2)
+                }
+            }
         }
         .frame(height: 110)
         .cornerRadius(20)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                .stroke(Color.white.opacity(isDisabled ? 0.02 : 0.05), lineWidth: 1)
         )
     }
 }
