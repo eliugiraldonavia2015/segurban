@@ -16,7 +16,8 @@ struct LoginView: View {
     var body: some View {
         if viewModel.isAuthenticated && !showSplash && !isAnimatingLogin {
             DashboardView()
-                .transition(.opacity)
+                .environmentObject(viewModel)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
         } else {
             ZStack {
                 if showSplash {

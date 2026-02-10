@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct DashboardView: View {
+    @EnvironmentObject var viewModel: LoginViewModel
     @State private var showPanicAlert = false
     @State private var showGenerateAccess = false
     @State private var showReservations = false
@@ -94,7 +95,28 @@ struct DashboardView: View {
                     
                     // Panic Button
                     panicButton
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 5)
+                    
+                    // Logout Button
+                    Button(action: {
+                        withAnimation {
+                            viewModel.isAuthenticated = false
+                        }
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 16, weight: .bold))
+                            Text("Cerrar Sesión")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(.gray)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(15)
+                    }
+                    .padding(.bottom, 20)
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
