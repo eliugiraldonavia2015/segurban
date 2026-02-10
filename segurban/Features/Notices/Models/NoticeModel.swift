@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 enum NoticeCategory: String, CaseIterable, Codable {
     case all = "Todos"

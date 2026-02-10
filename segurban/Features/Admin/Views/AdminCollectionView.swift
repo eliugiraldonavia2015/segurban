@@ -121,7 +121,7 @@ struct AdminCollectionView: View {
         }
     }
     
-    func filterButton(title: String, status: PaymentStatus?) -> some View {
+    func filterButton(title: String, status: CollectionStatus?) -> some View {
         Button(action: {
             withAnimation {
                 viewModel.selectedStatusFilter = status

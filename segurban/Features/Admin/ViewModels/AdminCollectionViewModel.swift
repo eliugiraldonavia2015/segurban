@@ -6,8 +6,17 @@
 //
 
 import SwiftUI
+import Combine
 
-enum PaymentStatus: String {
+// Use the PaymentStatus from PaymentModel.swift instead of redefining it
+// or rename this if it has different semantics. 
+// Given the user error "Invalid redeclaration", we should remove this enum 
+// and use the one in PaymentModel if appropriate, or rename it.
+// Looking at the values: "Al Día", "Deuda", "Pendiente".
+// PaymentModel has: "Pendiente", "Pagado", "Sin Pago", "Vencido".
+// They are slightly different. Let's rename this one to CollectionStatus to avoid conflict.
+
+enum CollectionStatus: String {
     case upToDate = "Al Día"
     case overdue = "Deuda"
     case pending = "Pendiente"
@@ -26,7 +35,7 @@ struct HouseDebtModel: Identifiable {
     let manzana: String
     let villa: String
     let ownerName: String
-    let status: PaymentStatus
+    let status: CollectionStatus
     let totalDebt: Double
     let pendingMaintenanceMonths: Int // Cantidad de alícuotas pendientes
     let pendingReservations: Int // Cantidad de reservas sin pagar
@@ -36,7 +45,7 @@ struct HouseDebtModel: Identifiable {
 class AdminCollectionViewModel: ObservableObject {
     @Published var houses: [HouseDebtModel] = []
     @Published var searchText: String = ""
-    @Published var selectedStatusFilter: PaymentStatus? = nil
+    @Published var selectedStatusFilter: CollectionStatus? = nil
     
     var filteredHouses: [HouseDebtModel] {
         houses.filter { house in

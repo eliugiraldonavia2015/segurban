@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-enum VisitStatus: String, Codable, CaseIterable {
+enum VisitStatus: String, Codable {
     case all = "Todos"
     case used = "Usado"
     case overdue = "Vencido"
