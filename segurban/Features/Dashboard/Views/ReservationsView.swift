@@ -383,34 +383,55 @@ struct ReservationsView: View {
                             if let method = selectedPaymentMethod {
                                 VStack(spacing: 15) {
                                     if method == "Tarjeta" {
-                                        VStack(spacing: 12) {
-                                            TextField("Número de Tarjeta", text: $cardNumber)
-                                                .keyboardType(.numberPad)
-                                                .padding(10)
-                                                .background(Color.white.opacity(0.1))
-                                                .cornerRadius(8)
-                                                .foregroundColor(.white)
+                                        VStack(spacing: 20) {
+                                            // Live Card Preview
+                                            CreditCardView(
+                                                cardNumber: cardNumber,
+                                                cardHolder: cardHolder,
+                                                cardExpiry: cardExpiry,
+                                                cardCVV: cardCVV
+                                            )
+                                            .transition(.scale.combined(with: .opacity))
                                             
-                                            TextField("Nombre del Titular", text: $cardHolder)
-                                                .padding(10)
-                                                .background(Color.white.opacity(0.1))
-                                                .cornerRadius(8)
-                                                .foregroundColor(.white)
-                                            
-                                            HStack(spacing: 12) {
-                                                TextField("MM/AA", text: $cardExpiry)
-                                                    .keyboardType(.numbersAndPunctuation)
-                                                    .padding(10)
-                                                    .background(Color.white.opacity(0.1))
-                                                    .cornerRadius(8)
-                                                    .foregroundColor(.white)
-                                                
-                                                TextField("CVV", text: $cardCVV)
+                                            // Fields
+                                            VStack(spacing: 12) {
+                                                TextField("Número de Tarjeta", text: $cardNumber)
                                                     .keyboardType(.numberPad)
                                                     .padding(10)
                                                     .background(Color.white.opacity(0.1))
                                                     .cornerRadius(8)
                                                     .foregroundColor(.white)
+                                                    .onChange(of: cardNumber) { newValue in
+                                                        if newValue.count > 16 { cardNumber = String(newValue.prefix(16)) }
+                                                    }
+                                                
+                                                TextField("Nombre del Titular", text: $cardHolder)
+                                                    .padding(10)
+                                                    .background(Color.white.opacity(0.1))
+                                                    .cornerRadius(8)
+                                                    .foregroundColor(.white)
+                                                
+                                                HStack(spacing: 12) {
+                                                    TextField("MM/AA", text: $cardExpiry)
+                                                        .keyboardType(.numbersAndPunctuation)
+                                                        .padding(10)
+                                                        .background(Color.white.opacity(0.1))
+                                                        .cornerRadius(8)
+                                                        .foregroundColor(.white)
+                                                        .onChange(of: cardExpiry) { newValue in
+                                                            if newValue.count > 5 { cardExpiry = String(newValue.prefix(5)) }
+                                                        }
+                                                    
+                                                    TextField("CVV", text: $cardCVV)
+                                                        .keyboardType(.numberPad)
+                                                        .padding(10)
+                                                        .background(Color.white.opacity(0.1))
+                                                        .cornerRadius(8)
+                                                        .foregroundColor(.white)
+                                                        .onChange(of: cardCVV) { newValue in
+                                                            if newValue.count > 3 { cardCVV = String(newValue.prefix(3)) }
+                                                        }
+                                                }
                                             }
                                         }
                                         .transition(.move(edge: .top).combined(with: .opacity))
@@ -503,16 +524,12 @@ struct ReservationsView: View {
                     Color(hex: "0D1B2A")
                         .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: -5)
                 )
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(Color.white.opacity(0.1)),
-                    alignment: .top
-                )
+                // Removed .ignoresSafeArea(edges: .bottom) to fix keyboard obstruction
+                .padding(.bottom, 0) // Ensure it sits at bottom
             }
-            .ignoresSafeArea(edges: .bottom)
+            // Removed .ignoresSafeArea(edges: .bottom) from parent VStack too if present
             
-            // Payment Processing Overlay
+            // Success Overlay
             if showVerifyingPayment {
                 ZStack {
                     Color.black.opacity(0.6).ignoresSafeArea()
@@ -930,6 +947,101 @@ struct ReservationDetailView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
         }
+    }
+}
+
+struct CreditCardView: View {
+    var cardNumber: String
+    var cardHolder: String
+    var cardExpiry: String
+    var cardCVV: String
+    
+    var body: some View {
+        ZStack {
+            // Background
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color(hex: "152636"), Color.cyan.opacity(0.8)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+            
+            VStack(alignment: .leading, spacing: 20) {
+                // Bank Name / Chip
+                HStack {
+                    Image(systemName: "simcard.fill") // Chip placeholder
+                        .font(.system(size: 30))
+                        .foregroundColor(.yellow.opacity(0.8))
+                        .rotationEffect(.degrees(90))
+                    Spacer()
+                    Text("VISA")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .italic()
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                // Number
+                Text(formatCardNumber(cardNumber))
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .fontDesign(.monospaced)
+                    .foregroundColor(.white)
+                    .shadow(radius: 1)
+                
+                // Details
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("TITULAR")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                        Text(cardHolder.isEmpty ? "NOMBRE APELLIDO" : cardHolder.uppercased())
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .leading) {
+                        Text("EXPIRA")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                        Text(cardExpiry.isEmpty ? "MM/AA" : cardExpiry)
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .padding(25)
+        }
+        .frame(height: 200)
+    }
+    
+    func formatCardNumber(_ number: String) -> String {
+        let clean = number.replacingOccurrences(of: " ", with: "")
+        // Mask: XXXX XXXX XXXX XXXX
+        var result = ""
+        for (index, char) in clean.enumerated() {
+            if index > 0 && index % 4 == 0 {
+                result += " "
+            }
+            if index < 16 {
+                result.append(char)
+            }
+        }
+        if result.isEmpty { return "•••• •••• •••• ••••" }
+        return result
     }
 }
 
