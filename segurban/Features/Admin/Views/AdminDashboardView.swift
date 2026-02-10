@@ -23,6 +23,7 @@ struct AdminDashboardView: View {
     @State private var showCreateNotice = false
     @State private var showDisabledAlert = false
     @State private var showCommunity = false
+    @State private var showMetrics = false
     
     var body: some View {
         ZStack {
@@ -139,7 +140,8 @@ struct AdminDashboardView: View {
                     Spacer()
                     
                     fabOption(title: "Ver Métricas", icon: "chart.xyaxis.line", color: .purple) {
-                        // Action
+                        showMetrics = true
+                        viewModel.showFabMenu = false
                     }
                     
                     fabOption(title: "Verificar Bitácora", icon: "book.fill", color: .orange) {
@@ -218,6 +220,9 @@ struct AdminDashboardView: View {
         }
         .fullScreenCover(isPresented: $showCommunity) {
             AdminCommunityView()
+        }
+        .fullScreenCover(isPresented: $showMetrics) {
+            AdminMetricsView()
         }
     }
     
