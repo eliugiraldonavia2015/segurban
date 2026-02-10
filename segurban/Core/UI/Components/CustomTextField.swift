@@ -11,6 +11,7 @@ struct CustomTextField: View {
     var placeholder: String
     @Binding var text: String
     var icon: String? = nil
+    var keyboardType: UIKeyboardType = .default
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -27,6 +28,7 @@ struct CustomTextField: View {
                 }
                 TextField(placeholder, text: $text)
                     .foregroundColor(.white)
+                    .keyboardType(keyboardType)
             }
             .padding()
             .background(Color.white.opacity(0.05))

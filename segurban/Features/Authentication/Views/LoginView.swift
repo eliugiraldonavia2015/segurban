@@ -12,6 +12,7 @@ struct LoginView: View {
     @Namespace private var animation
     @State private var showSplash = false
     @State private var isAnimatingLogin = false
+    @State private var isKeyboardVisible = false // Track keyboard visibility
     
     var body: some View {
         if viewModel.isAuthenticated && !showSplash && !isAnimatingLogin {
@@ -25,6 +26,12 @@ struct LoginView: View {
                 } else {
                     loginContent
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation { isKeyboardVisible = true }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation { isKeyboardVisible = false }
             }
         }
     }
@@ -187,7 +194,7 @@ struct LoginView: View {
                 Spacer()
                 
                 // Role Switcher
-                if !viewModel.isSearchingUrbanization && !isAnimatingLogin {
+                if !viewModel.isSearchingUrbanization && !isAnimatingLogin && !isKeyboardVisible {
                     HStack(spacing: 0) {
                         roleButton(role: .resident)
                         roleButton(role: .guardRole)
@@ -218,8 +225,8 @@ struct LoginView: View {
     var residentFields: some View {
         VStack(spacing: 20) {
             HStack(spacing: 15) {
-                CustomTextField(placeholder: "Manzana (Mz)", text: $viewModel.manzana)
-                CustomTextField(placeholder: "Villa", text: $viewModel.villa)
+                CustomTextField(placeholder: "Manzana (Mz)", text: $viewModel.manzana, keyboardType: .numberPad)
+                CustomTextField(placeholder: "Villa", text: $viewModel.villa, keyboardType: .numberPad)
             }
             CustomSecureField(placeholder: "Contraseña", text: $viewModel.password)
         }
@@ -227,7 +234,7 @@ struct LoginView: View {
     
     var guardFields: some View {
         VStack(spacing: 20) {
-            CustomTextField(placeholder: "ID de Guardia", text: $viewModel.username, icon: "person.badge.shield")
+            CustomTextField(placeholder: "ID de Guardia", text: $viewModel.username, icon: "person.badge.shield", keyboardType: .numberPad)
             CustomSecureField(placeholder: "Contraseña", text: $viewModel.password)
         }
     }
