@@ -36,16 +36,14 @@ struct ReservationsView: View {
     let days = Array(1...31)
     let weekDays = ["D", "L", "M", "M", "J", "V", "S"]
     
-    // 07:00 to 22:00 (30 min intervals)
+    // 07:00 to 22:00 (1 hour intervals)
     let timeSlots = [
-        "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-        "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-        "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
-        "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+        "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
+        "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
     ]
     
     // Mock unavailable slots indices (consecutive)
-    let unavailableSlots = [8, 9] // 11:00, 11:30 unavailable
+    let unavailableSlots = [4, 5] // 11:00, 12:00 unavailable
     
     var body: some View {
         ZStack {
@@ -457,12 +455,12 @@ struct ReservationsView: View {
         showPaymentOptions = false
         if let start = selectedStartSlot, let end = selectedEndSlot {
             // Check if any selected slot is >= 17:00
-            // 17:00 index in our array is 20
-            if start >= 20 || end >= 20 {
+            // 17:00 index in our array is 10
+            if start >= 10 || end >= 10 {
                 showPaymentOptions = true
             }
         } else if let start = selectedStartSlot {
-             if start >= 20 { showPaymentOptions = true }
+             if start >= 10 { showPaymentOptions = true }
         }
     }
 
@@ -471,13 +469,7 @@ struct ReservationsView: View {
             // Case 1: Start selection
             if selectedStartSlot == nil {
                 selectedStartSlot = index
-                // Auto select next slot (1 hour total) if available and not blocked
-                let nextSlot = index + 1
-                if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
-                    selectedEndSlot = nextSlot
-                } else {
-                    selectedEndSlot = index
-                }
+                selectedEndSlot = nil
             }
             // Case 2: Extend or Change
             else if let start = selectedStartSlot {
@@ -487,8 +479,12 @@ struct ReservationsView: View {
                     selectedEndSlot = nil
                 } else if index > start {
                     // Selecting a later slot
+                    // Since each slot is 1 hour
+                    // If start=10 (17:00), index=11 (18:00) -> 2 hours (17:00-19:00)
+                    // If start=10, index=12 (19:00) -> 3 hours -> ERROR
+                    
                     let count = index - start + 1
-                    if count > 4 {
+                    if count > 2 {
                         errorMessage = "Solo se pueden seleccionar máximo 2 horas por villa"
                         showError = true
                         // Reset selection on error
@@ -504,12 +500,7 @@ struct ReservationsView: View {
                         if blocked {
                             // Reset to new start
                             selectedStartSlot = index
-                            let nextSlot = index + 1
-                            if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
-                                selectedEndSlot = nextSlot
-                            } else {
-                                selectedEndSlot = index
-                            }
+                            selectedEndSlot = nil
                         } else {
                             selectedEndSlot = index
                         }
@@ -517,12 +508,7 @@ struct ReservationsView: View {
                 } else {
                     // Clicked before start -> New start
                     selectedStartSlot = index
-                    let nextSlot = index + 1
-                    if nextSlot < timeSlots.count && !unavailableSlots.contains(nextSlot) {
-                        selectedEndSlot = nextSlot
-                    } else {
-                        selectedEndSlot = index
-                    }
+                    selectedEndSlot = nil
                 }
             }
         }
@@ -561,39 +547,21 @@ struct ReservationsView: View {
         let startTime = timeSlots[start]
         
         if let end = selectedEndSlot {
-            // End time is the END of the end slot.
-            // If slot is 07:00, it ends at 07:30.
-            // If slot is 07:30, it ends at 08:00.
-            
-            let endTimeString: String
+            // End time is the END of the end slot (slot + 1 hour)
             let endSlotTime = timeSlots[end]
             
             // Parse end slot time
             let components = endSlotTime.split(separator: ":")
-            if components.count == 2, let h = Int(components[0]), let m = Int(components[1]) {
-                var newM = m + 30
-                var newH = h
-                if newM >= 60 {
-                    newM -= 60
-                    newH += 1
-                }
-                endTimeString = String(format: "%02d:%02d", newH, newM)
-            } else {
-                endTimeString = endSlotTime
+            if components.count == 2, let h = Int(components[0]) {
+                let endTimeString = String(format: "%02d:00", h + 1)
+                return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
             }
-            
-            return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
+            return "\(selectedDate) Oct, \(startTime) - \(endSlotTime)"
         } else {
-            // Single slot (30 min)
+            // Single slot (1 hour)
              let components = startTime.split(separator: ":")
-            if components.count == 2, let h = Int(components[0]), let m = Int(components[1]) {
-                var newM = m + 30
-                var newH = h
-                if newM >= 60 {
-                    newM -= 60
-                    newH += 1
-                }
-                let endTimeString = String(format: "%02d:%02d", newH, newM)
+            if components.count == 2, let h = Int(components[0]) {
+                let endTimeString = String(format: "%02d:00", h + 1)
                 return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
             }
             return "\(selectedDate) Oct, \(startTime)"
