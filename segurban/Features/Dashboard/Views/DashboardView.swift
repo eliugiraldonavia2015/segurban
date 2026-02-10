@@ -13,6 +13,7 @@ struct DashboardView: View {
     @State private var showGenerateAccess = false
     @State private var showReservations = false
     @State private var showNotices = false
+    @State private var showPayments = false
     
     var body: some View {
         ZStack {
@@ -28,13 +29,15 @@ struct DashboardView: View {
                     
                     // Status Cards
                     HStack(spacing: 15) {
-                        statusCard(
-                            icon: "dollarsign.circle.fill",
-                            title: "Saldo a Pagar",
-                            value: "$1,250.00",
-                            status: "PENDIENTE",
-                            color: .red
-                        )
+                        Button(action: { showPayments = true }) {
+                            statusCard(
+                                icon: "dollarsign.circle.fill",
+                                title: "Saldo a Pagar",
+                                value: "$1,250.00",
+                                status: "PENDIENTE",
+                                color: .red
+                            )
+                        }
                         
                         statusCard(
                             icon: "sun.max.fill",
@@ -132,6 +135,9 @@ struct DashboardView: View {
         }
         .fullScreenCover(isPresented: $showNotices) {
             NoticeBoardView()
+        }
+        .fullScreenCover(isPresented: $showPayments) {
+            AccountStatusView()
         }
     }
     
