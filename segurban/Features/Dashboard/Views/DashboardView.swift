@@ -66,7 +66,9 @@ struct DashboardView: View {
                             Button(action: { showPackages = true }) {
                                 serviceButton(icon: "shippingbox.fill", title: "Paquetes")
                             }
-                            serviceButton(icon: "doc.text.fill", title: "Pagos")
+                            Button(action: { showPayments = true }) {
+                                serviceButton(icon: "doc.text.fill", title: "Pagos")
+                            }
                         }
                     }
                     
