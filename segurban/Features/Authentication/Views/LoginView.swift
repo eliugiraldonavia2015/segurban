@@ -16,9 +16,41 @@ struct LoginView: View {
     
     var body: some View {
         if viewModel.isAuthenticated && !showSplash && !isAnimatingLogin {
-            DashboardView()
-                .environmentObject(viewModel)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            if viewModel.selectedRole == .resident {
+                DashboardView()
+                    .environmentObject(viewModel)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            } else if viewModel.selectedRole == .admin {
+                AdminDashboardView()
+                    .environmentObject(viewModel)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            } else {
+                // Placeholder for other roles (Guard)
+                VStack {
+                    Spacer()
+                    Text("Panel de \(viewModel.selectedRole.rawValue)")
+                        .font(.title)
+                        .foregroundColor(.white)
+                    Text("Próximamente")
+                        .foregroundColor(.gray)
+                    
+                    Button(action: {
+                        withAnimation {
+                            viewModel.isAuthenticated = false
+                        }
+                    }) {
+                        Text("Cerrar Sesión")
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.red.opacity(0.8))
+                            .cornerRadius(10)
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(hex: "0D1B2A").ignoresSafeArea())
+                .transition(.opacity)
+            }
         } else {
             ZStack {
                 if showSplash {
