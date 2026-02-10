@@ -332,11 +332,22 @@ struct VisitDetailView: View {
                 
                 // Details Grid
                 VStack(spacing: 20) {
-                    detailRow(icon: "clock.fill", title: "Hora de Acceso", value: visit.formattedTime)
-                    detailRow(icon: "person.text.rectangle.fill", title: "Cédula", value: visit.cedula)
+                    if visit.status == .active {
+                        detailRow(icon: "clock.fill", title: "Hora de Acceso", value: "Pendiente", color: .orange)
+                    } else {
+                        detailRow(icon: "clock.fill", title: "Hora de Acceso", value: visit.formattedTime)
+                    }
+                    
+                    if visit.status == .active {
+                        detailRow(icon: "person.text.rectangle.fill", title: "Cédula", value: "Pendiente", color: .orange)
+                    } else {
+                        detailRow(icon: "person.text.rectangle.fill", title: "Cédula", value: visit.cedula)
+                    }
                     
                     if let plate = visit.licensePlate {
                         detailRow(icon: "car.fill", title: "Placa Vehículo", value: plate)
+                    } else if visit.status == .active {
+                        detailRow(icon: "car.fill", title: "Placa Vehículo", value: "Pendiente", color: .orange)
                     }
                     
                     detailRow(icon: "qrcode", title: "Medio de Acceso", value: visit.accessMethod.rawValue + (visit.accessCode != nil ? " (\(visit.accessCode!))" : ""))
