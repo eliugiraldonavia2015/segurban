@@ -454,13 +454,13 @@ struct ReservationsView: View {
     func checkPaymentRequirement() {
         showPaymentOptions = false
         if let start = selectedStartSlot, let end = selectedEndSlot {
-            // Check if any selected slot is >= 17:00
-            // 17:00 index in our array is 10
-            if start >= 10 || end >= 10 {
+            // Check if usage overlaps with >= 17:00
+            // 17:00 index is 10
+            // Usage range is start..<end
+            // If any index in start..<end is >= 10, then payment required
+            if end > 10 {
                 showPaymentOptions = true
             }
-        } else if let start = selectedStartSlot {
-             if start >= 10 { showPaymentOptions = true }
         }
     }
 
@@ -468,8 +468,25 @@ struct ReservationsView: View {
         withAnimation {
             // Case 1: Start selection
             if selectedStartSlot == nil {
+                // Cannot start on an unavailable slot
+                if unavailableSlots.contains(index) {
+                    return
+                }
+                
                 selectedStartSlot = index
-                selectedEndSlot = nil
+                // Default selection is 1 hour (Start to Start+1)
+                // Check if Start+1 is valid boundary (it can be unavailable as a start slot, but valid as end)
+                // Actually, if Start+1 is unavailable, it means the block Start->Start+1 is valid?
+                // Unavailable usually means the BLOCK starting at T is blocked.
+                // So if 11:00 is unavailable (Block 11-12), and we start at 10:00.
+                // We end at 11:00. Valid.
+                
+                let nextIndex = index + 1
+                if nextIndex < timeSlots.count {
+                     selectedEndSlot = nextIndex
+                } else {
+                     selectedEndSlot = index // Edge case end of day
+                }
             }
             // Case 2: Extend or Change
             else if let start = selectedStartSlot {
@@ -477,38 +494,65 @@ struct ReservationsView: View {
                     // Click start -> Reset
                     selectedStartSlot = nil
                     selectedEndSlot = nil
+                } else if index == start + 1 {
+                    // Clicked the default end slot -> Keep as 1 hour (Start to Start+1)
+                     // Already set, do nothing or re-set
+                     selectedEndSlot = index
                 } else if index > start {
-                    // Selecting a later slot
-                    // Since each slot is 1 hour
-                    // If start=10 (17:00), index=11 (18:00) -> 2 hours (17:00-19:00)
-                    // If start=10, index=12 (19:00) -> 3 hours -> ERROR
+                    // User clicked a later slot to extend
+                    // If start=7, end was 8. User clicks 9.
+                    // New range: 7 to 9. (2 hours).
+                    // Length = index - start.
+                    // 9 - 7 = 2. Max allowed.
                     
-                    let count = index - start + 1
-                    if count > 2 {
+                    let hours = index - start
+                    
+                    if hours > 2 {
                         errorMessage = "Solo se pueden seleccionar máximo 2 horas por villa"
                         showError = true
                         // Reset selection on error
                         selectedStartSlot = nil
                         selectedEndSlot = nil
                     } else {
-                        // Check availability in between
+                        // Check availability for the blocks covered
+                        // Range start..<index
                         var blocked = false
-                        for i in start...index {
+                        for i in start..<index {
                             if unavailableSlots.contains(i) { blocked = true }
                         }
                         
                         if blocked {
-                            // Reset to new start
-                            selectedStartSlot = index
-                            selectedEndSlot = nil
+                            // If blocked, we can't extend. Treat as new start?
+                            // Or just reset.
+                            // Let's treat as new start if the clicked slot is valid start
+                             if unavailableSlots.contains(index) {
+                                selectedStartSlot = nil
+                                selectedEndSlot = nil
+                             } else {
+                                selectedStartSlot = index
+                                let nextIndex = index + 1
+                                if nextIndex < timeSlots.count {
+                                     selectedEndSlot = nextIndex
+                                } else {
+                                     selectedEndSlot = index
+                                }
+                             }
                         } else {
                             selectedEndSlot = index
                         }
                     }
                 } else {
                     // Clicked before start -> New start
+                    if unavailableSlots.contains(index) {
+                        return
+                    }
                     selectedStartSlot = index
-                    selectedEndSlot = nil
+                    let nextIndex = index + 1
+                    if nextIndex < timeSlots.count {
+                         selectedEndSlot = nextIndex
+                    } else {
+                         selectedEndSlot = index
+                    }
                 }
             }
         }
@@ -518,6 +562,10 @@ struct ReservationsView: View {
     func isSlotSelected(_ index: Int) -> Bool {
         if let start = selectedStartSlot {
             if let end = selectedEndSlot {
+                // If start=7, end=8.
+                // 7 is Selected. 8 is Selected.
+                // 7 >= 7 && 7 <= 8 -> True.
+                // 8 >= 7 && 8 <= 8 -> True.
                 return index >= start && index <= end
             }
             return index == start
@@ -529,14 +577,12 @@ struct ReservationsView: View {
         if isUnavailable {
             return Color(hex: "0D1B2A").opacity(0.5)
         }
-        if let start = selectedStartSlot {
+        if let start = selectedStartSlot, let end = selectedEndSlot {
             if index == start {
-                return Color.cyan
+                return Color.cyan // First slot (Start) is Blue
             }
-            if let end = selectedEndSlot {
-                if index > start && index <= end {
-                    return Color.gray.opacity(0.5)
-                }
+            if index > start && index <= end {
+                return Color.gray.opacity(0.5) // Subsequent slots (up to End) are Gray
             }
         }
         return Color(hex: "152636")
@@ -547,23 +593,10 @@ struct ReservationsView: View {
         let startTime = timeSlots[start]
         
         if let end = selectedEndSlot {
-            // End time is the END of the end slot (slot + 1 hour)
-            let endSlotTime = timeSlots[end]
-            
-            // Parse end slot time
-            let components = endSlotTime.split(separator: ":")
-            if components.count == 2, let h = Int(components[0]) {
-                let endTimeString = String(format: "%02d:00", h + 1)
-                return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
-            }
-            return "\(selectedDate) Oct, \(startTime) - \(endSlotTime)"
+            // End time IS the slot at 'end' index
+            let endTimeString = timeSlots[end]
+            return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
         } else {
-            // Single slot (1 hour)
-             let components = startTime.split(separator: ":")
-            if components.count == 2, let h = Int(components[0]) {
-                let endTimeString = String(format: "%02d:00", h + 1)
-                return "\(selectedDate) Oct, \(startTime) - \(endTimeString)"
-            }
             return "\(selectedDate) Oct, \(startTime)"
         }
     }
