@@ -326,6 +326,7 @@ struct VisitDetailView: View {
                             .cornerRadius(8)
                     }
                 }
+                .padding(.top, 20) // Added padding to prevent cutoff
                 
                 Divider().background(Color.white.opacity(0.1))
                 

@@ -105,6 +105,22 @@ class VisitsViewModel: ObservableObject {
                 accessMethod: .normal,
                 accessCode: nil,
                 licensePlate: "GTD-5521"
+            ),
+            Visit(
+                name: "Pedro Alcantara",
+                date: Calendar.current.date(byAdding: .hour, value: 1, to: Date())!, // Future/Pending
+                status: .active,
+                accessMethod: .qr,
+                accessCode: "#C991",
+                licensePlate: nil
+            ),
+            Visit(
+                name: "Lucia Méndez",
+                date: Calendar.current.date(byAdding: .hour, value: 3, to: Date())!, // Future/Pending
+                status: .active,
+                accessMethod: .code,
+                accessCode: "9912",
+                licensePlate: "ABC-1234"
             )
         ]
     }
