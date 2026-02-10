@@ -11,8 +11,9 @@ struct GenerateAccessView: View {
     @Environment(\.dismiss) var dismiss
     @State private var guestName: String = "María González"
     @State private var visitDate: Date = Date()
-    @State private var duration: String = "4 horas"
-    @State private var timeRange: ClosedRange<Double> = 18...22
+    @State private var startTime: Date = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var endTime: Date = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var isAccessGenerated: Bool = false
     
     var body: some View {
         ZStack {
@@ -94,63 +95,96 @@ struct GenerateAccessView: View {
                                 )
                             }
                             
-                            // Duration
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Duración")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                
-                                HStack {
-                                    Text(duration)
-                                        .foregroundColor(.white)
-                                        .fontWeight(.bold)
-                                    Spacer()
-                                }
-                                .padding()
-                                .background(Color(hex: "152636"))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                )
-                            }
-                            .frame(width: 120)
-                        }
-                        
-                        // Time Range Slider
-                        VStack(alignment: .leading, spacing: 15) {
+                        // Duration
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Duración")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
                             HStack {
-                                Text("Horario permitido")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                                Text("\(formatTime(timeRange.lowerBound)) - \(formatTime(timeRange.upperBound))")
-                                    .font(.caption)
+                                Text(calculateDuration())
+                                    .foregroundColor(.white)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.cyan)
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Color(hex: "152636"))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                        }
+                        .frame(width: 120)
+                    }
+                    
+                    // Time Selection
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("Horario permitido")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        
+                        HStack(spacing: 20) {
+                            // Start Time
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Desde")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
                             }
                             
-                            RangeSlider(range: $timeRange, bounds: 0...24)
-                                .padding(.vertical, 10)
+                            Spacer()
                             
-                            HStack {
-                                Text("12:00")
+                            Image(systemName: "arrow.right")
+                                .foregroundColor(.gray)
+                            
+                            Spacer()
+                            
+                            // End Time
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Hasta")
                                     .font(.caption2)
-                                    .foregroundColor(.gray.opacity(0.5))
-                                Spacer()
-                                Text("00:00")
-                                    .font(.caption2)
-                                    .foregroundColor(.gray.opacity(0.5))
+                                    .foregroundColor(.gray)
+                                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
                             }
                         }
-                        .padding()
-                        .background(Color(hex: "152636"))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                        
+                    }
+                    .padding()
+                    .background(Color(hex: "152636"))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    
+                    // Generate Access Button (Visible when not generated)
+                    if !isAccessGenerated {
+                        Button(action: {
+                            withAnimation {
+                                isAccessGenerated = true
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "qrcode")
+                                Text("Generar Acceso")
+                            }
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.cyan)
+                            .cornerRadius(15)
+                            .shadow(color: .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
+                        }
+                        .padding(.top, 10)
+                    }
+                    
+                    if isAccessGenerated {
                         // QR Code Card
                         VStack(spacing: 20) {
                             Text("ACCESO GENERADO")
@@ -221,13 +255,16 @@ struct GenerateAccessView: View {
                                     lineWidth: 1
                                 )
                         )
-                        
-                        Spacer(minLength: 20)
+                        .transition(.scale.combined(with: .opacity))
                     }
-                    .padding(.horizontal)
+                    
+                    Spacer(minLength: 20)
                 }
-                
-                // Bottom Action
+                .padding(.horizontal)
+            }
+            
+            // Bottom Action
+            if isAccessGenerated {
                 VStack(spacing: 15) {
                     Button(action: {}) {
                         HStack {
@@ -256,16 +293,28 @@ struct GenerateAccessView: View {
                 }
                 .padding(20)
                 .background(Color(hex: "0D1B2A"))
+                .transition(.move(edge: .bottom))
             }
         }
-        .navigationBarHidden(true)
+    }
+    .navigationBarHidden(true)
+}
+
+func calculateDuration() -> String {
+    let diff = Calendar.current.dateComponents([.hour, .minute], from: startTime, to: endTime)
+    let hours = diff.hour ?? 0
+    let minutes = diff.minute ?? 0
+    
+    if hours < 0 {
+        return "0h 0m"
     }
     
-    func formatTime(_ value: Double) -> String {
-        let hours = Int(value)
-        let minutes = Int((value - Double(hours)) * 60)
-        return String(format: "%02d:%02d", hours, minutes)
+    if minutes == 0 {
+        return "\(hours) horas"
+    } else {
+        return "\(hours)h \(minutes)m"
     }
+}
 }
 
 #Preview {
