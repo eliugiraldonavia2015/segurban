@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 enum UserRole: String, CaseIterable, Identifiable {
     case resident = "Residente"

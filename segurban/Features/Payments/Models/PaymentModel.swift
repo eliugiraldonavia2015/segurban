@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 enum PaymentStatus: String, Codable {
     case pending = "Pendiente"
