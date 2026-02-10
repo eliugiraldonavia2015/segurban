@@ -70,7 +70,7 @@ struct VisitsView: View {
         }
         .sheet(item: $selectedVisit) { visit in
             VisitDetailView(visit: visit)
-                .presentationDetents([.medium])
+                .presentationDetents([.height(550)]) // Fixed height to accommodate content comfortably
                 .presentationCornerRadius(25)
         }
     }
