@@ -29,10 +29,20 @@ struct ReservationsView: View {
     
     // Payment & Confirmation
     @State private var showPaymentOptions = false
-    @State private var selectedPaymentMethod: String = "Tarjeta"
+    @State private var selectedPaymentMethod: String? = nil
     @State private var showSuccess = false
+    @State private var showVerifyingPayment = false
     @State private var showError = false
     @State private var errorMessage = ""
+    
+    // Card Fields
+    @State private var cardNumber = ""
+    @State private var cardHolder = ""
+    @State private var cardExpiry = ""
+    @State private var cardCVV = ""
+    
+    // Transfer Fields
+    @State private var transferImage: String? = nil // Placeholder for image logic
     
     @State private var myReservations: [ReservationItem] = [
         ReservationItem(
@@ -337,7 +347,7 @@ struct ReservationsView: View {
                     }
                     
                     if showPaymentOptions {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 15) {
                             Text("⚠️ Horario Nocturno: $20.00/hr por iluminación")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
@@ -347,9 +357,14 @@ struct ReservationsView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.gray)
                             
+                            // Payment Method Selector
                             HStack(spacing: 10) {
                                 ForEach(["Tarjeta", "Transferencia", "Deuda"], id: \.self) { method in
-                                    Button(action: { selectedPaymentMethod = method }) {
+                                    Button(action: { 
+                                        withAnimation {
+                                            selectedPaymentMethod = method 
+                                        }
+                                    }) {
                                         Text(method)
                                             .font(.caption)
                                             .fontWeight(.medium)
@@ -360,6 +375,103 @@ struct ReservationsView: View {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(selectedPaymentMethod == method ? Color.cyan : Color.white.opacity(0.1))
                                             )
+                                    }
+                                }
+                            }
+                            
+                            // Dynamic Payment Content
+                            if let method = selectedPaymentMethod {
+                                VStack(spacing: 15) {
+                                    if method == "Tarjeta" {
+                                        VStack(spacing: 12) {
+                                            TextField("Número de Tarjeta", text: $cardNumber)
+                                                .keyboardType(.numberPad)
+                                                .padding(10)
+                                                .background(Color.white.opacity(0.1))
+                                                .cornerRadius(8)
+                                                .foregroundColor(.white)
+                                            
+                                            TextField("Nombre del Titular", text: $cardHolder)
+                                                .padding(10)
+                                                .background(Color.white.opacity(0.1))
+                                                .cornerRadius(8)
+                                                .foregroundColor(.white)
+                                            
+                                            HStack(spacing: 12) {
+                                                TextField("MM/AA", text: $cardExpiry)
+                                                    .keyboardType(.numbersAndPunctuation)
+                                                    .padding(10)
+                                                    .background(Color.white.opacity(0.1))
+                                                    .cornerRadius(8)
+                                                    .foregroundColor(.white)
+                                                
+                                                TextField("CVV", text: $cardCVV)
+                                                    .keyboardType(.numberPad)
+                                                    .padding(10)
+                                                    .background(Color.white.opacity(0.1))
+                                                    .cornerRadius(8)
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                    } else if method == "Transferencia" {
+                                        VStack(spacing: 12) {
+                                            Text("Sube una captura del comprobante")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                            
+                                            Button(action: {
+                                                // Mock upload
+                                                transferImage = "captured"
+                                            }) {
+                                                ZStack {
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                                        .foregroundColor(.gray)
+                                                        .frame(height: 100)
+                                                    
+                                                    if transferImage != nil {
+                                                        VStack {
+                                                            Image(systemName: "checkmark.circle.fill")
+                                                                .foregroundColor(.green)
+                                                                .font(.title)
+                                                            Text("Comprobante cargado")
+                                                                .font(.caption)
+                                                                .foregroundColor(.green)
+                                                        }
+                                                    } else {
+                                                        VStack {
+                                                            Image(systemName: "camera.fill")
+                                                                .font(.title2)
+                                                                .foregroundColor(.gray)
+                                                            Text("Tocar para subir")
+                                                                .font(.caption)
+                                                                .foregroundColor(.gray)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                    } else if method == "Deuda" {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            HStack {
+                                                Image(systemName: "exclamationmark.triangle.fill")
+                                                    .foregroundColor(.orange)
+                                                Text("Aviso Importante")
+                                                    .font(.caption)
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(.orange)
+                                            }
+                                            Text("El valor se sumará a tu alícuota mensual. Si acumulas 2 reservas sin pagar, tu usuario será inhabilitado para futuras reservas.")
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        .padding()
+                                        .background(Color.orange.opacity(0.1))
+                                        .cornerRadius(10)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
                                     }
                                 }
                             }
@@ -383,6 +495,8 @@ struct ReservationsView: View {
                         .cornerRadius(15)
                         .shadow(color: .cyan.opacity(0.3), radius: 10, x: 0, y: 5)
                     }
+                    .disabled(showPaymentOptions && selectedPaymentMethod == nil)
+                    .opacity((showPaymentOptions && selectedPaymentMethod == nil) ? 0.5 : 1)
                 }
                 .padding(25)
                 .background(
@@ -398,6 +512,29 @@ struct ReservationsView: View {
             }
             .ignoresSafeArea(edges: .bottom)
             
+            // Payment Processing Overlay
+            if showVerifyingPayment {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+                    
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                            .scaleEffect(1.5)
+                        
+                        Text("Procesando Pago...")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(30)
+                    .background(Color(hex: "152636"))
+                    .cornerRadius(15)
+                    .shadow(radius: 20)
+                }
+                .transition(.opacity)
+                .zIndex(110)
+            }
+
             // Success Overlay
             if showSuccess {
                 ZStack {
@@ -626,7 +763,41 @@ struct ReservationsView: View {
     func confirmReservation() {
         guard let start = selectedStartSlot else { return }
         
-        // Add to list
+        // Validation for payment flow
+        if showPaymentOptions {
+            guard let method = selectedPaymentMethod else { return }
+            
+            if method == "Tarjeta" {
+                if cardNumber.isEmpty || cardHolder.isEmpty || cardExpiry.isEmpty || cardCVV.isEmpty {
+                    errorMessage = "Por favor completa todos los datos de la tarjeta"
+                    showError = true
+                    return
+                }
+                // Simulate processing
+                withAnimation { showVerifyingPayment = true }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        showVerifyingPayment = false
+                        finalizeReservation()
+                    }
+                }
+                return
+            }
+            
+            if method == "Transferencia" {
+                if transferImage == nil {
+                    errorMessage = "Por favor sube el comprobante de pago"
+                    showError = true
+                    return
+                }
+            }
+        }
+        
+        finalizeReservation()
+    }
+    
+    func finalizeReservation() {
         let timeString = formatSelectedTime()
         // Extract just the time part
         let parts = timeString.components(separatedBy: ", ")
@@ -645,12 +816,20 @@ struct ReservationsView: View {
         
         myReservations.append(newReservation)
         
+        // Reset inputs
+        cardNumber = ""
+        cardHolder = ""
+        cardExpiry = ""
+        cardCVV = ""
+        transferImage = nil
+        selectedPaymentMethod = nil
+        
         withAnimation {
             showSuccess = true
         }
         
         // Hide success after delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             withAnimation {
                 showSuccess = false
                 dismiss()
